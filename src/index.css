@@ -1,0 +1,5 @@
+/* Clean slate for Tailwind CDN implementation */
+body {
+  margin: 0;
+  padding: 0;
+}
