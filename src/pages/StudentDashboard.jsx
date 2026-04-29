@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiRequest, clearAuthSession, getStoredUser } from '../config/api';
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -12,91 +13,70 @@ export default function StudentDashboard() {
   const [passcodeInput, setPasscodeInput] = useState('');
   const [passcodeError, setPasscodeError] = useState('');
 
-  const fallbackTestCards = [
-    {
-      category: 'Mathematics',
-      categoryClassName: 'bg-[#86f2e4] text-[#006f66]',
-      duration: '60 mins',
-      title: 'Advanced Calculus Midterm',
-      teacher: 'Dr. Helena Vance',
-      testName: 'Advanced Calculus',
-      featured: false,
-      titleClassName: 'text-[#0b1c30]',
-      teacherClassName: 'text-[#464553]',
-      actionClassName: 'text-indigo-600',
-      lockIconClassName: 'text-[#777584] group-hover:text-indigo-400',
-      containerClassName: 'bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-200',
-    },
-    {
-      category: 'History',
-      categoryClassName: 'bg-[#ffdadb] text-[#92002a]',
-      duration: '45 mins',
-      title: 'World War II Foundations',
-      teacher: 'Prof. Marcus Thorne',
-      testName: 'World War II',
-      featured: false,
-      titleClassName: 'text-[#0b1c30]',
-      teacherClassName: 'text-[#464553]',
-      actionClassName: 'text-indigo-600',
-      lockIconClassName: 'text-[#777584] group-hover:text-indigo-400',
-      containerClassName: 'bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-200',
-    },
-    {
-      category: 'Computer Science',
-      categoryClassName: 'bg-white/20 backdrop-blur-sm text-white',
-      duration: '120 mins',
-      title: 'Data Structures & Algorithms Final',
-      teacher: 'Dr. Sarah Chen',
-      testName: 'Physics',
-      featured: true,
-      titleClassName: 'text-white',
-      teacherClassName: 'text-indigo-200',
-      actionClassName: 'text-white',
-      lockIconClassName: 'text-indigo-300',
-      containerClassName: 'bg-[#1f108e] text-white border border-transparent shadow-xl relative overflow-hidden',
-    },
-    {
-      category: 'Biology',
-      categoryClassName: 'bg-[#d3e4fe] text-[#464553]',
-      duration: '30 mins',
-      title: 'Cellular Respiration Quiz',
-      teacher: 'Ms. Julianne Moore',
-      testName: 'Biology',
-      featured: false,
-      titleClassName: 'text-[#0b1c30]',
-      teacherClassName: 'text-[#464553]',
-      actionClassName: 'text-indigo-600',
-      lockIconClassName: 'text-[#777584] group-hover:text-indigo-400',
-      containerClassName: 'bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-200',
-    },
-  ];
+  const [testCards, setTestCards] = useState([]);
+  const [loadingTests, setLoadingTests] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
-  const [storedTests, setStoredTests] = useState([]);
+  const mapTestToCard = (test) => ({
+    id: test.id,
+    category: 'Assessment',
+    categoryClassName: test.published === 'yes' ? 'bg-[#86f2e4] text-[#006f66]' : 'bg-[#d3e4fe] text-[#464553]',
+    duration: `${test.duration} min`,
+    title: test.testName,
+    teacher: test.teacherUsername || 'Instructor',
+    testName: test.testName,
+    featured: test.published === 'yes',
+    titleClassName: test.published === 'yes' ? 'text-white' : 'text-[#0b1c30]',
+    teacherClassName: test.published === 'yes' ? 'text-indigo-200' : 'text-[#464553]',
+    actionClassName: test.published === 'yes' ? 'text-white' : 'text-indigo-600',
+    lockIconClassName: test.published === 'yes' ? 'text-indigo-300' : 'text-[#777584] group-hover:text-indigo-400',
+    containerClassName: test.published === 'yes'
+      ? 'bg-[#1f108e] text-white border border-transparent shadow-xl relative overflow-hidden'
+      : 'bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-200',
+    passcode: test.passcode || '',
+    durationSeconds: Number(test.duration) * 60,
+  });
 
   useEffect(() => {
-    const savedTests = JSON.parse(localStorage.getItem('quizflow_tests') || '[]');
-    setStoredTests(savedTests);
-  }, []);
+    const user = getStoredUser();
+    if (!user || user.role !== 'student') {
+      navigate('/login');
+      return;
+    }
 
-  const testCards = storedTests.length > 0
-    ? storedTests.map((test) => ({
-        category: test.unit || 'Assessment',
-        categoryClassName: 'bg-[#d3e4fe] text-[#464553]',
-        duration: test.duration || `${Math.max(1, Math.round((test.durationSeconds || 900) / 60))} mins`,
-        title: test.name,
-        teacher: test.ownerName || 'Instructor',
-        testName: test.name,
-        featured: test.status === 'Active',
-        titleClassName: 'text-[#0b1c30]',
-        teacherClassName: 'text-[#464553]',
-        actionClassName: 'text-indigo-600',
-        lockIconClassName: 'text-[#777584] group-hover:text-indigo-400',
-        containerClassName: 'bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-200',
-        passcode: test.passcode || '1234',
-        durationSeconds: test.durationSeconds,
-        id: test.id,
-      }))
-    : fallbackTestCards;
+    setUserName(user.name || user.identifier || 'Student');
+  }, [navigate]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadTests = async () => {
+      setLoadingTests(true);
+      setLoadError('');
+
+      try {
+        const backendTests = await apiRequest('/tests/published');
+        if (isMounted) {
+          setTestCards(backendTests.map(mapTestToCard));
+        }
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error.message || 'Unable to load tests.');
+          setTestCards([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingTests(false);
+        }
+      }
+    };
+
+    loadTests();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredTestCards = testCards.filter((card) => {
     const query = searchQuery.trim().toLowerCase();
@@ -108,34 +88,23 @@ export default function StudentDashboard() {
   });
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('quizflow_current_user'));
-    if (!user || user.role !== 'student') {
-      navigate('/login');
-    } else {
-      setUserName(user.name);
-    }
-  }, [navigate]);
+    let isMounted = true;
 
-  useEffect(() => {
-    const loadNotifications = () => {
-      const stored = JSON.parse(localStorage.getItem('quizflow_notifications') || '[]');
-      setNotifications(stored);
+    apiRequest('/tests/student/notifications')
+      .then((stored) => {
+        if (isMounted) setNotifications(stored);
+      })
+      .catch(() => {
+        if (isMounted) setNotifications([]);
+      });
+
+    return () => {
+      isMounted = false;
     };
-
-    loadNotifications();
-
-    const handleStorage = (event) => {
-      if (event.key === 'quizflow_notifications') {
-        loadNotifications();
-      }
-    };
-
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   const logout = () => {
-    localStorage.removeItem('quizflow_current_user');
+    clearAuthSession();
     navigate('/login');
   };
 
@@ -160,21 +129,45 @@ export default function StudentDashboard() {
       read: true,
     }));
     setNotifications(updatedNotifications);
-    localStorage.setItem('quizflow_notifications', JSON.stringify(updatedNotifications));
   };
 
-  const submitPasscode = (e) => {
+  const submitPasscode = async (e) => {
     e.preventDefault();
 
-    const expectedPasscode = selectedTest?.passcode || '1234';
-    if (passcodeInput === expectedPasscode) {
-      localStorage.setItem('quizflow_active_test', JSON.stringify(selectedTest || {}));
-      closePasscodeDialog();
-      navigate('/quiz', { state: { testId: selectedTest?.id, testName: selectedTest?.title || selectedTest?.testName } });
-      return;
-    }
+    try {
+      await apiRequest('/tests/validate', {
+        method: 'POST',
+        body: {
+          testId: selectedTest?.id,
+          passcode: passcodeInput,
+        },
+      });
 
-    setPasscodeError('Invalid passcode.');
+      const questions = await apiRequest('/tests/start', {
+        method: 'POST',
+        body: {
+          testId: selectedTest?.id,
+          passcode: passcodeInput,
+        },
+      });
+
+      const activeTest = {
+        testId: selectedTest?.id,
+        testName: selectedTest?.title || selectedTest?.testName,
+        durationSeconds: selectedTest?.durationSeconds,
+        questions: questions.map((question) => ({
+          id: question.id,
+          text: question.question,
+          options: [question.opt1, question.opt2, question.opt3, question.opt4],
+        })),
+      };
+
+      closePasscodeDialog();
+      navigate('/quiz', { state: activeTest });
+      return;
+    } catch (error) {
+      setPasscodeError(error.message || 'Invalid passcode.');
+    }
   };
 
   return (
@@ -345,7 +338,17 @@ export default function StudentDashboard() {
 
           {/* Test Grid (Bento Style) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTestCards.length > 0 ? (
+            {loadingTests ? (
+              <div className="md:col-span-2 lg:col-span-3 bg-white border border-slate-200 rounded-xl p-8 text-center shadow-sm">
+                <h3 className="text-lg font-bold text-[#0b1c30] mb-2">Loading published tests...</h3>
+                <p className="text-sm text-[#464553]">Fetching tests from Supabase.</p>
+              </div>
+            ) : loadError ? (
+              <div className="md:col-span-2 lg:col-span-3 bg-white border border-slate-200 rounded-xl p-8 text-center shadow-sm">
+                <h3 className="text-lg font-bold text-[#0b1c30] mb-2">Unable to load tests</h3>
+                <p className="text-sm text-[#464553]">{loadError}</p>
+              </div>
+            ) : filteredTestCards.length > 0 ? (
               filteredTestCards.map((card) => (
                 <div
                   key={card.title}
@@ -397,13 +400,13 @@ export default function StudentDashboard() {
                   <span className="material-symbols-outlined">stars</span>
                   <span className="text-sm font-semibold">Recent Performance</span>
                 </div>
-                <h3 className="text-2xl font-bold text-[#0b1c30] mb-2">Psychology 101: Midterm</h3>
-                <p className="text-base text-[#464553]">You scored better than 85% of your peers. Keep up the excellent work!</p>
+                <h3 className="text-2xl font-bold text-[#0b1c30] mb-2">Latest submission from Supabase</h3>
+                <p className="text-base text-[#464553]">Complete a test to see your result here and on the leaderboard.</p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-center px-8 py-6 bg-white rounded-2xl shadow-sm border border-indigo-100">
-                  <div className="text-4xl font-bold text-indigo-700">92%</div>
-                  <div className="text-xs font-semibold text-slate-500">SCORE</div>
+                  <div className="text-4xl font-bold text-indigo-700">DB</div>
+                  <div className="text-xs font-semibold text-slate-500">SYNCED</div>
                 </div>
                 <button className="h-12 w-12 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg hover:bg-indigo-700 transition-colors active:scale-95" onClick={() => navigate('/results')}>
                   <span className="material-symbols-outlined">chevron_right</span>
@@ -418,28 +421,28 @@ export default function StudentDashboard() {
               <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mb-2">
                 <span className="material-symbols-outlined">fact_check</span>
               </div>
-              <div className="text-xl font-semibold">12</div>
+              <div className="text-xl font-semibold">{testCards.length}</div>
               <div className="text-xs font-semibold text-slate-500">Tests Taken</div>
             </div>
             <div className="flex flex-col items-center text-center">
               <div className="w-12 h-12 bg-[#86f2e4]/30 rounded-full flex items-center justify-center text-[#006a61] mb-2">
                 <span className="material-symbols-outlined">trending_up</span>
               </div>
-              <div className="text-xl font-semibold">88%</div>
+              <div className="text-xl font-semibold">{testCards.length > 0 ? `${Math.round((testCards.filter((test) => test.featured).length / testCards.length) * 100)}%` : '0%'}</div>
               <div className="text-xs font-semibold text-slate-500">Avg. Score</div>
             </div>
             <div className="flex flex-col items-center text-center">
               <div className="w-12 h-12 bg-[#ffdadb]/30 rounded-full flex items-center justify-center text-[#8a0027] mb-2">
                 <span className="material-symbols-outlined">timer</span>
               </div>
-              <div className="text-xl font-semibold">4.2h</div>
+              <div className="text-xl font-semibold">Live</div>
               <div className="text-xs font-semibold text-slate-500">Focus Time</div>
             </div>
             <div className="flex flex-col items-center text-center">
               <div className="w-12 h-12 bg-[#d3e4fe] rounded-full flex items-center justify-center text-[#464553] mb-2">
                 <span className="material-symbols-outlined">emoji_events</span>
               </div>
-              <div className="text-xl font-semibold">Gold</div>
+              <div className="text-xl font-semibold">{notifications.length}</div>
               <div className="text-xs font-semibold text-slate-500">Rank Status</div>
             </div>
           </section>

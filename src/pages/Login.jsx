@@ -1,39 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiRequest, parseJwtPayload, setAuthSession } from '../config/api';
 
 export default function Login() {
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const defaultUsers = [
-      { identifier: 'student-001', password: 'password', name: 'Alex Johnson', role: 'student' },
-      { identifier: 'teacher-001', password: 'password', name: 'Dr. Sarah Miller', role: 'teacher' }
-    ];
-    
-    let users = JSON.parse(localStorage.getItem('quizflow_users'));
-    if (!users) {
-      localStorage.setItem('quizflow_users', JSON.stringify(defaultUsers));
-    }
-  }, []);
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const currentUsers = JSON.parse(localStorage.getItem('quizflow_users') || '[]');
-    const user = currentUsers.find((u) => (u.identifier === identifier || u.email === identifier) && u.password === password);
-    
-    if (user) {
-      localStorage.setItem('quizflow_current_user', JSON.stringify(user));
-      if (user.role === 'teacher') {
+    setError('');
+
+    try {
+      const auth = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        authenticated: false,
+        body: { identifier, password },
+      });
+
+      const payload = parseJwtPayload(auth.accessToken);
+      const role = String(auth.role || payload?.role || 'student').toLowerCase();
+      const userIdentifier = payload?.sub || identifier;
+      const user = {
+        identifier: userIdentifier,
+        name: auth.username || userIdentifier,
+        role,
+      };
+
+      setAuthSession({
+        accessToken: auth.accessToken,
+        refreshToken: auth.refreshToken,
+        user,
+      });
+
+      if (role === 'teacher') {
         navigate('/teacher-dashboard');
       } else {
         navigate('/student-dashboard');
       }
-    } else {
-      setError(true);
+    } catch (err) {
+      setError(err.message || 'Invalid credentials. Please try again.');
     }
   };
 
@@ -41,19 +49,8 @@ export default function Login() {
     setShowPassword(!showPassword);
   };
 
-  const socialLogin = (provider) => {
-    const role = window.confirm(`Login as Teacher with ${provider}? (Cancel for Student)`) ? 'teacher' : 'student';
-    const name = role === 'teacher' ? 'Dr. Sarah Miller' : 'Alex Johnson';
-    const identifierValue = `${role}-${provider.toLowerCase()}-001`;
-    
-    const user = { name, identifier: identifierValue, role, provider, password: 'password' };
-    localStorage.setItem('quizflow_current_user', JSON.stringify(user));
-    
-    if (role === 'teacher') {
-      navigate('/teacher-dashboard');
-    } else {
-      navigate('/student-dashboard');
-    }
+  const socialLogin = () => {
+    navigate('/signup');
   };
 
   return (
@@ -117,7 +114,7 @@ export default function Login() {
             {error && (
               <div id="error-alert" className="mb-6 p-4 bg-[#ffdad6] rounded-lg border border-[#ba1a1a]/20 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#ba1a1a]">error</span>
-                <p className="text-sm text-[#93000a]">Invalid identifier or password. Please try again.</p>
+                <p className="text-sm text-[#93000a]">{error}</p>
               </div>
             )}
 
@@ -192,15 +189,17 @@ export default function Login() {
 
               <div className="grid grid-cols-2 gap-4">
                 <button 
+                  type="button"
                   className="flex items-center justify-center gap-2 h-[48px] border border-[#c8c4d5] rounded-lg hover:bg-[#eff4ff] transition-colors" 
-                  onClick={() => socialLogin('Google')}
+                  onClick={socialLogin}
                 >
                   <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXvu1ApvwERO1aw3gzDl2lP2EGU2XHH9kmoR8MsRrzy-2gZRPjfSiYc0R4A9CT1OXw34ws3WN_GrZo1_wX0DXHzqaZhLWzv4pt0h_LxRfN5-pv_hkgVaKz33el3pL141yx0LbMUfBL1RbZojGV0z-mKqgwgGj6grKP-C51HfJUu5vBB-pX-7pS6I90n1u1JXfwj9WtnRvfiLFNAyuknEIewDg2kWZUF9vrIRaPJr2wipKh25hx2GKCWkVOPM4sV94rIBXOBDp2skZe" />
                   <span className="text-sm font-semibold">Google</span>
                 </button>
                 <button 
+                  type="button"
                   className="flex items-center justify-center gap-2 h-[48px] border border-[#c8c4d5] rounded-lg hover:bg-[#eff4ff] transition-colors" 
-                  onClick={() => socialLogin('Microsoft')}
+                  onClick={socialLogin}
                 >
                   <img alt="Microsoft" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOJUauN2Nl5srTMTm4sgZf1yhzA-n8EGwlTsxsSwWZBooipMyrKUqhaJP5cVsbHnfCIpGUmZl_jvCWVdCMRN8CBZC8DIldG-LUgtjbhfk99pv6k7saDhm7HhgpQdCNKwQg8RS4v5ASlt_RmP49_05vFvVJONfeQ0kB4h4rAO9zNGMzRwhSoJIoEDjuWJNJSPwTlLiEV5KM0W6HS796x3yoY4Pr0pUjy6oeCBo-Ypd4-e7ydSiiBHcMBA7bQxgmXFAL4CjuqX0Jp7c5" />
                   <span className="text-sm font-semibold">Microsoft</span>

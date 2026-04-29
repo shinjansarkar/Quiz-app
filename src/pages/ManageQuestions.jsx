@@ -1,16 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { apiRequest, getStoredUser } from '../config/api';
 
 
 export default function ManageQuestions() {
   const navigate = useNavigate();
   const location = useLocation();
   const { testId } = useParams();
-  const currentUser = JSON.parse(localStorage.getItem('quizflow_current_user') || '{}');
+  const currentUser = getStoredUser();
 
   const testContext = location.state || {};
-  const storedTests = JSON.parse(localStorage.getItem('quizflow_tests') || '[]');
-  const matchedTest = storedTests.find((test) => String(test.id) === String(testId));
 
   const [questions, setQuestions] = useState([]);
   const [qText, setQText] = useState('');
@@ -23,24 +22,37 @@ export default function ManageQuestions() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteQuestionId, setDeleteQuestionId] = useState(null);
 
-  useEffect(() => {
-    const fresh = JSON.parse(localStorage.getItem('quizflow_tests') || '[]');
-    const found = fresh.find((t) => String(t.id) === String(testId));
-    if (found) {
-      setQuestions(found.questions || []);
-    } else {
-      setQuestions([]);
-    }
-  }, [testId]);
+  const mapQuestion = (question) => ({
+    id: question.id,
+    text: question.question,
+    options: [question.opt1, question.opt2, question.opt3, question.opt4],
+    correctIndex: question.correct,
+    editedAt: 'Saved in Supabase',
+    accuracyRate: 'Live data',
+  });
 
-  const saveQuestionsToStorage = (newQuestions) => {
-    const all = JSON.parse(localStorage.getItem('quizflow_tests') || '[]');
-    const idx = all.findIndex((t) => String(t.id) === String(testId));
-    if (idx !== -1) {
-      all[idx] = { ...all[idx], questions: newQuestions };
-      localStorage.setItem('quizflow_tests', JSON.stringify(all));
-    }
-  };
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadQuestions = async () => {
+      try {
+        const fresh = await apiRequest(`/questions/test/${testId}`);
+        if (isMounted) {
+          setQuestions(fresh.map(mapQuestion));
+        }
+      } catch {
+        if (isMounted) {
+          setQuestions([]);
+        }
+      }
+    };
+
+    loadQuestions();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [testId]);
 
   const clearForm = () => {
     setQText(''); setOptA(''); setOptB(''); setOptC(''); setOptD(''); setCorrectIndex(0); setEditingId(null);
@@ -55,24 +67,46 @@ export default function ManageQuestions() {
     const trimmed = qText.trim();
     if (!trimmed) return;
     const opts = [optA.trim(), optB.trim(), optC.trim(), optD.trim()].map((o) => o || '');
-    const newQ = {
-      id: editingId || Date.now(),
-      text: trimmed,
-      options: opts,
-      correctIndex: Number(correctIndex) || 0,
-      editedAt: 'Just now',
-      accuracyRate: '0% Accuracy Rate',
-    };
+    const request = editingId
+      ? apiRequest('/questions/edit', {
+          method: 'PUT',
+          body: {
+            username: currentUser?.identifier,
+            question: {
+              id: editingId,
+              question: trimmed,
+              opt1: opts[0],
+              opt2: opts[1],
+              opt3: opts[2],
+              opt4: opts[3],
+              correct: Number(correctIndex) || 0,
+              testId: Number(testId),
+            },
+          },
+        })
+      : apiRequest('/questions/add', {
+          method: 'POST',
+          body: {
+            username: currentUser?.identifier,
+            question: {
+              question: trimmed,
+              opt1: opts[0],
+              opt2: opts[1],
+              opt3: opts[2],
+              opt4: opts[3],
+              correct: Number(correctIndex) || 0,
+              testId: Number(testId),
+            },
+          },
+        });
 
-    let newQuestions;
-    if (editingId) {
-      newQuestions = questions.map((q) => (q.id === editingId ? newQ : q));
-    } else {
-      newQuestions = [newQ, ...questions];
-    }
-    setQuestions(newQuestions);
-    saveQuestionsToStorage(newQuestions);
-    clearForm();
+    request
+      .then(async () => {
+        const fresh = await apiRequest(`/questions/test/${testId}`);
+        setQuestions(fresh.map(mapQuestion));
+        clearForm();
+      })
+      .catch((error) => alert(error.message || 'Failed to save question.'));
   };
 
   const handleEditQuestion = (q) => {
@@ -93,11 +127,21 @@ export default function ManageQuestions() {
 
   const confirmDelete = () => {
     if (deleteQuestionId === null) return;
-    const newQuestions = questions.filter((q) => q.id !== deleteQuestionId);
-    setQuestions(newQuestions);
-    saveQuestionsToStorage(newQuestions);
-    setIsDeleteDialogOpen(false);
-    setDeleteQuestionId(null);
+
+    apiRequest('/questions/delete', {
+      method: 'DELETE',
+      body: {
+        username: currentUser?.identifier,
+        questionId: deleteQuestionId,
+      },
+    })
+      .then(async () => {
+        const fresh = await apiRequest(`/questions/test/${testId}`);
+        setQuestions(fresh.map(mapQuestion));
+        setIsDeleteDialogOpen(false);
+        setDeleteQuestionId(null);
+      })
+      .catch((error) => alert(error.message || 'Failed to delete question.'));
   };
 
   const closeDeleteDialog = () => {
@@ -117,10 +161,9 @@ export default function ManageQuestions() {
 
   const testTitle = useMemo(() => {
     if (testContext.testName) return testContext.testName;
-    if (matchedTest?.name) return matchedTest.name;
     if (testId) return `Test ${testId}`;
-    return 'Advanced Physics Assessment';
-  }, [matchedTest?.name, testContext.testName, testId]);
+    return 'Assessment';
+  }, [testContext.testName, testId]);
 
   const questionCount = questions.length;
 

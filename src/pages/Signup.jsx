@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiRequest, parseJwtPayload, setAuthSession } from '../config/api';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -15,23 +16,48 @@ export default function Signup() {
     ? "We'll use this to verify your teaching profile."
     : "We'll use this to verify your student profile.";
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    let users = JSON.parse(localStorage.getItem('quizflow_users') || '[]');
-    if (users.some(u => u.identifier === identifier || u.email === identifier)) {
-      alert('ID already registered!');
-      return;
-    }
-    
-    const newUser = { name: fullName, identifier, password, role };
-    users.push(newUser);
-    localStorage.setItem('quizflow_users', JSON.stringify(users));
-    localStorage.setItem('quizflow_current_user', JSON.stringify(newUser));
-    
-    if (role === 'teacher') {
-      navigate('/teacher-dashboard');
-    } else {
-      navigate('/student-dashboard');
+
+    try {
+      await apiRequest('/api/auth/signup', {
+        method: 'POST',
+        authenticated: false,
+        body: {
+          username: fullName,
+          identifier,
+          password,
+          role,
+        },
+      });
+
+      const auth = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        authenticated: false,
+        body: { identifier, password },
+      });
+
+      const payload = parseJwtPayload(auth.accessToken);
+      const normalizedRole = String(auth.role || payload?.role || role).toLowerCase();
+      const user = {
+        identifier: payload?.sub || identifier,
+        name: auth.username || fullName,
+        role: normalizedRole,
+      };
+
+      setAuthSession({
+        accessToken: auth.accessToken,
+        refreshToken: auth.refreshToken,
+        user,
+      });
+
+      if (user.role === 'teacher') {
+        navigate('/teacher-dashboard');
+      } else {
+        navigate('/student-dashboard');
+      }
+    } catch (err) {
+      alert(err.message || 'Unable to connect to backend. Please try again.');
     }
   };
 
@@ -39,26 +65,8 @@ export default function Signup() {
     setShowPassword(!showPassword);
   };
 
-  const socialSignup = (provider) => {
-    const chosenRole = window.confirm(`Sign up as Teacher with ${provider}? (Cancel for Student)`) ? 'teacher' : 'student';
-    const name = chosenRole === 'teacher' ? 'Dr. Sarah Miller' : 'Alex Johnson';
-    const chosenIdentifier = `${chosenRole}-${provider.toLowerCase()}-001`;
-    
-    let users = JSON.parse(localStorage.getItem('quizflow_users') || '[]');
-    const existing = users.find(u => u.identifier === chosenIdentifier || u.email === chosenIdentifier);
-    
-    if (!existing) {
-      users.push({ name, identifier: chosenIdentifier, role: chosenRole, provider, password: 'password' });
-      localStorage.setItem('quizflow_users', JSON.stringify(users));
-    }
-    
-    localStorage.setItem('quizflow_current_user', JSON.stringify({ name, identifier: chosenIdentifier, role: chosenRole }));
-    
-    if (chosenRole === 'teacher') {
-      navigate('/teacher-dashboard');
-    } else {
-      navigate('/student-dashboard');
-    }
+  const socialSignup = () => {
+    navigate('/signup');
   };
 
   return (
@@ -199,15 +207,17 @@ export default function Signup() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <button 
+                  type="button"
                   className="flex items-center justify-center gap-2 py-2 px-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors duration-200 text-sm font-semibold" 
-                  onClick={() => socialSignup('Google')}
+                  onClick={socialSignup}
                 >
                   <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJH1agQo1duI5TZnfyGSo3jrpDtxkHO8NebiteGHWe2gT_KFlCLm_qz_DKnkLyyPk6UrWoulnLxZotQF3O4qKIC0_2LVOs8kNYKiO8-P2XsmPnOEMBFQMLiSq2pnujrKYS0qBLfzNNMRG2jzYpygoo8Z4St2ap-loHSVsRjMsbPzDoIjKD5zGLpEAuG8aeVHWFmUfxJXJwHKUQb6za-uvuETN4i-lvOgw3JMWkBbH3sHhMxbkWHelzmWDazTXsGv7_dJALXzwqNnQW" />
                   Google
                 </button>
                 <button 
+                  type="button"
                   className="flex items-center justify-center gap-2 py-2 px-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors duration-200 text-sm font-semibold" 
-                  onClick={() => socialSignup('University')}
+                  onClick={socialSignup}
                 >
                   <span className="material-symbols-outlined text-[#0b1c30]">account_balance</span>
                   University ID

@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { apiRequest, getStoredUser } from '../config/api';
 
 export default function Results() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const routeResult = location.state || {};
   const [greeting, setGreeting] = useState('Excellent Work!');
-  const [score, setScore] = useState(85);
-  const [correct, setCorrect] = useState(17);
-  const [total, setTotal] = useState(20);
-  const [timeTaken, setTimeTaken] = useState('07:30');
-  const [testName, setTestName] = useState('Advanced Physics Exam');
+  const [score, setScore] = useState(0);
+  const [correct, setCorrect] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [timeTaken, setTimeTaken] = useState('--');
+  const [testName, setTestName] = useState('Latest Assessment');
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('quizflow_current_user'));
+    const user = getStoredUser();
     if (!user) {
       navigate('/login');
       return;
@@ -24,21 +27,37 @@ export default function Results() {
 
     setGreeting(`Excellent Work, ${user.name.split(' ')[0]}!`);
 
-    const savedScore = localStorage.getItem('quiz_last_score');
-    const savedCorrect = localStorage.getItem('quiz_last_correct');
-    const savedTime = localStorage.getItem('quiz_last_time');
-    const savedTest = JSON.parse(localStorage.getItem('quiz_last_test') || '{}');
+    const applyResult = (result) => {
+      if (!result) return;
+      const computedScore = Number(result.score) || 0;
+      const computedTotal = Number(result.total || result.totalQuestions) || 0;
+      const computedCorrect = Number(result.correctCount ?? result.score) || 0;
+      const computedTime = Number(result.timeUsed ?? result.timeTaken);
 
-    if (savedScore !== null) setScore(Number(savedScore));
-    if (savedCorrect !== null) setCorrect(Number(savedCorrect));
-    if (savedTest.totalQuestions) setTotal(Number(savedTest.totalQuestions));
-    if (savedTest.testName) setTestName(savedTest.testName);
-    if (savedTime !== null) {
-      const timeSeconds = Number(savedTime);
-      const mins = Math.floor(timeSeconds / 60);
-      const secs = timeSeconds % 60;
-      setTimeTaken(`${mins}:${String(secs).padStart(2, '0')}`);
+      setScore(computedTotal > 0 ? computedScore : 0);
+      setCorrect(computedCorrect);
+      setTotal(computedTotal);
+      setTestName(result.testName || 'Latest Assessment');
+
+      if (!Number.isNaN(computedTime) && computedTime >= 0) {
+        const mins = Math.floor(computedTime / 60);
+        const secs = computedTime % 60;
+        setTimeTaken(`${mins}:${String(secs).padStart(2, '0')}`);
+      }
+    };
+
+    if (routeResult && Object.keys(routeResult).length > 0) {
+      applyResult(routeResult);
+      return;
     }
+
+    apiRequest('/tests/results/my-results')
+      .then((results) => {
+        applyResult(Array.isArray(results) && results.length > 0 ? results[0] : null);
+      })
+      .catch(() => {
+        applyResult(null);
+      });
   }, [navigate]);
 
   return (

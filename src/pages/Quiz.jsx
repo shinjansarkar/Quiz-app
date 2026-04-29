@@ -1,49 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { apiRequest, getStoredUser } from '../config/api';
 
 export default function Quiz() {
   const navigate = useNavigate();
   const location = useLocation();
   const routeTest = location.state || {};
-  const storedTest = JSON.parse(localStorage.getItem('quizflow_active_test') || '{}');
-  const activeTest = { ...storedTest, ...routeTest };
-  const quizTitle = activeTest.title || activeTest.testName || 'Advanced Physics Assessment';
+  const activeTest = routeTest;
+  const quizTitle = activeTest.testName || activeTest.title || 'Selected Assessment';
   
   const [questions] = useState(() => {
     const activeQuestions = Array.isArray(activeTest.questions) ? activeTest.questions : [];
-    if (activeQuestions.length > 0) {
-      return activeQuestions.map((question, index) => ({
-        id: question.id || index + 1,
-        text: question.text || question.questionText || `Question ${index + 1}`,
-        options: question.options || ['Option A', 'Option B', 'Option C', 'Option D'],
-        correct: question.correctIndex ?? question.correct ?? 0,
-      }));
-    }
-
-    const base = [
-      { id: 1, text: "A particle moves along the x-axis with a velocity given by v(t) = 3t² - 6t. If the particle starts at the origin at t = 0, what is its position at t = 3?", options: ["9 units", "0 units", "18 units", "-9 units"], correct: 1 },
-      { id: 2, text: "What is the work done by a conservative force around a closed loop?", options: ["Zero", "Positive", "Negative", "Depends on the path"], correct: 0 },
-      { id: 3, text: "Which of the following is a statement of the First Law of Thermodynamics?", options: ["Energy cannot be created or destroyed", "Entropy always increases", "Absolute zero cannot be reached", "Force equals mass times acceleration"], correct: 0 },
-      { id: 4, text: "What is the speed of light in a vacuum?", options: ["3 x 10^8 m/s", "3 x 10^6 m/s", "1.5 x 10^8 m/s", "Infinite"], correct: 0 },
-      { id: 5, text: "Which particle is the carrier of the electromagnetic force?", options: ["Gluon", "Photon", "W boson", "Graviton"], correct: 1 }
-    ];
-    
-    for (let i = 6; i <= 20; i++) {
-      base.push({
-        id: i,
-        text: `Advanced Physics Question ${i}: Dummy question content for assessment purposes.`,
-        options: ["Option A", "Option B", "Option C", "Option D"],
-        correct: 0
-      });
-    }
-    return base;
+    return activeQuestions.map((question, index) => ({
+      id: question.id || index + 1,
+      text: question.text || question.question || question.questionText || `Question ${index + 1}`,
+      options: question.options || ['Option A', 'Option B', 'Option C', 'Option D'],
+    }));
   });
 
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [answers, setAnswers] = useState(() => JSON.parse(localStorage.getItem('quiz_answers') || '{}'));
-  const [marked, setMarked] = useState(() => JSON.parse(localStorage.getItem('quiz_marked') || '[]'));
+  const [answers, setAnswers] = useState({});
+  const [marked, setMarked] = useState([]);
   const [timeRemaining, setTimeRemaining] = useState(() => {
-    const durationSeconds = Number(activeTest.durationSeconds);
+    const durationSeconds = Number(activeTest.durationSeconds || Number(activeTest.duration) * 60);
     if (!Number.isNaN(durationSeconds) && durationSeconds > 0) {
       return durationSeconds;
     }
@@ -57,12 +36,16 @@ export default function Quiz() {
     return 900;
   });
   const [showModal, setShowModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('quizflow_current_user'));
+    const user = getStoredUser();
     if (!user || user.role !== 'student') {
       navigate('/login');
+      return;
     }
+
+    setCurrentUser(user);
   }, [navigate]);
 
   useEffect(() => {
@@ -84,7 +67,6 @@ export default function Quiz() {
     const q = questions[currentIdx];
     const newAnswers = { ...answers, [q.id]: idx };
     setAnswers(newAnswers);
-    localStorage.setItem('quiz_answers', JSON.stringify(newAnswers));
   };
 
   const nextQuestion = () => {
@@ -108,7 +90,6 @@ export default function Quiz() {
       newMarked = [...marked, q.id];
     }
     setMarked(newMarked);
-    localStorage.setItem('quiz_marked', JSON.stringify(newMarked));
   };
 
   const formatTime = (seconds) => {
@@ -117,40 +98,30 @@ export default function Quiz() {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const submitQuizAuto = (currentAnswers) => {
-    let correctCount = 0;
-    questions.forEach((q) => {
-      if (currentAnswers[q.id] === q.correct) {
-        correctCount++;
-      }
-    });
-    const score = Math.round((correctCount / questions.length) * 100);
-    const currentUser = JSON.parse(localStorage.getItem('quizflow_current_user') || '{}');
-    const testName = quizTitle;
-    const timeUsed = (Number(activeTest.durationSeconds) || 900) - timeRemaining;
+  const submitQuizAuto = async (currentAnswers) => {
+    if (!currentUser) return;
 
-    localStorage.setItem('quiz_last_score', score);
-    localStorage.setItem('quiz_last_correct', correctCount);
-    localStorage.setItem('quiz_last_time', timeUsed);
-    localStorage.setItem('quiz_last_test', JSON.stringify({ testName, score, correctCount, totalQuestions: questions.length, timeUsed }));
+    try {
+      const response = await apiRequest('/tests/submit', {
+        method: 'POST',
+        body: {
+          testId: Number(activeTest.testId || activeTest.id),
+          username: currentUser.identifier,
+          answers: currentAnswers,
+        },
+      });
 
-    const studentName = currentUser && currentUser.role === 'student' ? currentUser.name : 'Student';
-    const submissions = JSON.parse(localStorage.getItem('quizflow_submissions') || '[]');
-    submissions.unshift({
-      id: `submission-${Date.now()}`,
-      testName,
-      studentName,
-      score,
-      correctCount,
-      totalQuestions: questions.length,
-      submittedAt: new Date().toISOString(),
-    });
-    localStorage.setItem('quizflow_submissions', JSON.stringify(submissions));
-
-    localStorage.removeItem('quiz_answers');
-    localStorage.removeItem('quiz_marked');
-
-    navigate('/results');
+      const timeUsed = (Number(activeTest.durationSeconds || Number(activeTest.duration) * 60) || 900) - timeRemaining;
+      navigate('/results', {
+        state: {
+          ...response,
+          timeUsed,
+          testName: response.testName || quizTitle,
+        },
+      });
+    } catch (error) {
+      alert(error.message || 'Unable to submit test.');
+    }
   };
 
   const submitQuiz = () => {

@@ -1,12 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiRequest, clearAuthSession, getStoredUser } from '../config/api';
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
   const [teacherUser, setTeacherUser] = useState(null);
-  const [teacherName, setTeacherName] = useState('Dr. Sarah Miller');
+  const [teacherName, setTeacherName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [tests, setTests] = useState([]);
+  const [loadingTests, setLoadingTests] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  const mapTestToCard = (test, questionCount = 0) => ({
+    id: test.id,
+    name: test.testName,
+    unit: test.published === 'yes' ? 'Published assessment' : 'Draft assessment',
+    duration: `${test.duration} min`,
+    date: 'Saved in Supabase',
+    status: test.published === 'yes' ? 'Active' : 'Draft',
+    code: (test.testName || 'TX').slice(0, 2).toUpperCase(),
+    passcode: test.passcode || '',
+    ownerIdentifier: test.teacherUsername,
+    ownerName: teacherName || test.teacherUsername,
+    questions: Array.from({ length: questionCount }, () => ({})),
+    durationSeconds: Number(test.duration) * 60,
+    questionCount,
+  });
 
   const filteredTests = tests.filter((test) => {
     const query = searchQuery.trim().toLowerCase();
@@ -17,7 +36,7 @@ export default function TeacherDashboard() {
   });
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('quizflow_current_user'));
+    const user = getStoredUser();
     if (!user || user.role !== 'teacher') {
       navigate('/login');
     } else {
@@ -28,70 +47,45 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     if (!teacherUser) return;
-    const reloadOwnedTests = () => {
-      const ownerKey = teacherUser.identifier || teacherUser.email || teacherUser.name;
-      const savedTests = JSON.parse(localStorage.getItem('quizflow_tests') || '[]');
-      const ownedTests = savedTests.filter((test) => test.ownerIdentifier === ownerKey);
+    let isMounted = true;
 
-      if (ownedTests.length > 0) {
-        setTests(ownedTests);
-        return;
+    const loadTests = async () => {
+      setLoadingTests(true);
+      setLoadError('');
+
+      try {
+        const backendTests = await apiRequest('/tests/my-tests');
+        const testsWithQuestions = await Promise.all(
+          backendTests.map(async (test) => {
+            const questions = await apiRequest(`/questions/test/${test.id}`);
+            return mapTestToCard(test, questions.length);
+          })
+        );
+
+        if (isMounted) {
+          setTests(testsWithQuestions);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error.message || 'Unable to load tests.');
+          setTests([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingTests(false);
+        }
       }
-
-      const seededTests = [
-      { id: 1, name: 'Computer Science Final', unit: 'Unit 4: Algorithms', duration: '60 mins', date: 'Oct 24, 2023', status: 'Active', code: 'CS' },
-      { id: 2, name: 'Calculus II Midterm', unit: 'Section B: Integration', duration: '90 mins', date: 'Oct 20, 2023', status: 'Draft', code: 'MA' },
-      { id: 3, name: 'Literature Analysis', unit: '18th Century Poetry', duration: '45 mins', date: 'Oct 15, 2023', status: 'Active', code: 'LI' }
-    ].map((test) => ({
-      ...test,
-      ownerIdentifier: ownerKey,
-      ownerName: teacherUser.name,
-      questions: test.questions || [],
-      passcode: test.passcode || '1234',
-      durationSeconds: test.durationSeconds || parseInt(test.duration, 10) * 60 || 900,
-    }));
-
-    const mergedTests = [
-      ...savedTests.filter((test) => test.ownerIdentifier !== ownerKey),
-      ...seededTests,
-    ];
-    localStorage.setItem('quizflow_tests', JSON.stringify(mergedTests));
-    setTests(seededTests);
     };
 
-    // initial load
-    reloadOwnedTests();
-
-    // reload when window gains focus (returning from Manage Questions) or when storage changes
-    const onStorage = (e) => {
-      if (!teacherUser) return;
-      if (!e.key || e.key === 'quizflow_tests') reloadOwnedTests();
-    };
-    const onFocus = () => reloadOwnedTests();
-
-    window.addEventListener('storage', onStorage);
-    window.addEventListener('focus', onFocus);
+    loadTests();
 
     return () => {
-      window.removeEventListener('storage', onStorage);
-      window.removeEventListener('focus', onFocus);
+      isMounted = false;
     };
   }, [teacherUser]);
 
-  useEffect(() => {
-    if (!teacherUser) return;
-
-    const ownerKey = teacherUser.identifier || teacherUser.email || teacherUser.name;
-    const savedTests = JSON.parse(localStorage.getItem('quizflow_tests') || '[]');
-    const mergedTests = [
-      ...savedTests.filter((test) => test.ownerIdentifier !== ownerKey),
-      ...tests,
-    ];
-    localStorage.setItem('quizflow_tests', JSON.stringify(mergedTests));
-  }, [tests, teacherUser]);
-
   const logout = () => {
-    localStorage.removeItem('quizflow_current_user');
+    clearAuthSession();
     navigate('/login');
   };
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -113,7 +107,7 @@ export default function TeacherDashboard() {
     setCreateError('');
   };
 
-  const submitCreateQuiz = (e) => {
+  const submitCreateQuiz = async (e) => {
     e.preventDefault();
     if (!newTestName.trim()) {
       setCreateError('Please enter a test name.');
@@ -121,44 +115,59 @@ export default function TeacherDashboard() {
     }
     const seconds = parseInt(newTestDuration, 10);
     if (Number.isNaN(seconds) || seconds <= 0) {
-      setCreateError('Duration must be a positive number of seconds.');
+      setCreateError('Duration must be a positive number of minutes.');
       return;
     }
 
-    const newQuiz = {
-      id: Date.now(),
-      name: newTestName.trim(),
-      unit: 'Unit 1: Introduction',
-      duration: `${seconds} sec`,
-      date: 'Today',
-      status: 'Draft',
-      code: newTestName.trim().slice(0, 2).toUpperCase(),
-      passcode: newTestPasscode,
-      ownerIdentifier: teacherUser?.identifier || teacherUser?.email || teacherUser?.name,
-      ownerName: teacherUser?.name,
-      durationSeconds: seconds,
-      questions: [],
-    };
+    try {
+      await apiRequest('/tests/create', {
+        method: 'POST',
+        body: {
+          testName: newTestName.trim(),
+          passcode: newTestPasscode,
+          teacherUsername: teacherUser?.identifier,
+          duration: seconds,
+          published: 'no',
+        },
+      });
 
-    setTests([newQuiz, ...tests]);
-
-    const notifications = JSON.parse(localStorage.getItem('quizflow_notifications') || '[]');
-    notifications.unshift({
-      id: `test-created-${newQuiz.id}`,
-      type: 'test_created',
-      title: 'New test created',
-      message: `${newQuiz.name} is now available in the student dashboard.`,
-      createdAt: new Date().toISOString(),
-      read: false,
-    });
-    localStorage.setItem('quizflow_notifications', JSON.stringify(notifications));
-
-    setIsCreateDialogOpen(false);
+      setIsCreateDialogOpen(false);
+      await apiRequest('/tests/my-tests').then(async (backendTests) => {
+        const testsWithQuestions = await Promise.all(
+          backendTests.map(async (test) => {
+            const questions = await apiRequest(`/questions/test/${test.id}`);
+            return mapTestToCard(test, questions.length);
+          })
+        );
+        setTests(testsWithQuestions);
+      });
+    } catch (error) {
+      setCreateError(error.message || 'Failed to create test.');
+    }
   };
 
-  const deleteRow = (id) => {
+  const deleteRow = async (id) => {
     if (window.confirm('Are you sure you want to delete this test?')) {
-      setTests(tests.filter(test => test.id !== id));
+      try {
+        await apiRequest('/tests/delete', {
+          method: 'DELETE',
+          body: {
+            testId: id,
+            username: teacherUser?.identifier,
+          },
+        });
+
+        const backendTests = await apiRequest('/tests/my-tests');
+        const testsWithQuestions = await Promise.all(
+          backendTests.map(async (test) => {
+            const questions = await apiRequest(`/questions/test/${test.id}`);
+            return mapTestToCard(test, questions.length);
+          })
+        );
+        setTests(testsWithQuestions);
+      } catch (error) {
+        alert(error.message || 'Failed to delete test.');
+      }
     }
   };
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -184,9 +193,22 @@ export default function TeacherDashboard() {
   };
 
   const togglePublish = (id) => {
-    setTests(tests.map(test => 
-      test.id === id ? { ...test, status: test.status === 'Active' ? 'Draft' : 'Active' } : test
-    ));
+    const selectedTest = tests.find((test) => test.id === id);
+    if (!selectedTest) return;
+
+    const endpoint = selectedTest.status === 'Active' ? `/tests/${id}/unpublish` : `/tests/${id}/publish`;
+    apiRequest(endpoint, { method: 'PUT' })
+      .then(async () => {
+        const backendTests = await apiRequest('/tests/my-tests');
+        const testsWithQuestions = await Promise.all(
+          backendTests.map(async (test) => {
+            const questions = await apiRequest(`/questions/test/${test.id}`);
+            return mapTestToCard(test, questions.length);
+          })
+        );
+        setTests(testsWithQuestions);
+      })
+      .catch((error) => alert(error.message || 'Failed to update publish status.'));
   };
 
   const closeRenameDialog = () => {
@@ -196,16 +218,40 @@ export default function TeacherDashboard() {
     setRenameError('');
   };
 
-  const submitRename = (e) => {
+  const submitRename = async (e) => {
     e.preventDefault();
     if (!renameInput.trim()) {
       setRenameError('Name cannot be empty.');
       return;
     }
 
-    setTests(tests.map(test => test.id === renameTestId ? { ...test, name: renameInput.trim() } : test));
-    closeRenameDialog();
+    try {
+      await apiRequest('/tests/rename', {
+        method: 'PUT',
+        body: {
+          testId: renameTestId,
+          newName: renameInput.trim(),
+          username: teacherUser?.identifier,
+        },
+      });
+
+      const backendTests = await apiRequest('/tests/my-tests');
+      const testsWithQuestions = await Promise.all(
+        backendTests.map(async (test) => {
+          const questions = await apiRequest(`/questions/test/${test.id}`);
+          return mapTestToCard(test, questions.length);
+        })
+      );
+      setTests(testsWithQuestions);
+      closeRenameDialog();
+    } catch (error) {
+      setRenameError(error.message || 'Failed to rename test.');
+    }
   };
+
+  const activeTestCount = tests.filter((test) => test.status === 'Active').length;
+  const draftTestCount = tests.filter((test) => test.status === 'Draft').length;
+  const totalQuestionCount = tests.reduce((sum, test) => sum + (test.questionCount || 0), 0);
 
   return (
     <div className="flex min-h-screen bg-[#f8f9ff] text-[#0b1c30] font-sans">
@@ -298,7 +344,7 @@ export default function TeacherDashboard() {
               </div>
               <div>
                 <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Active Tests</p>
-                <p className="text-2xl font-bold text-[#0b1c30]">12</p>
+                <p className="text-2xl font-bold text-[#0b1c30]">{activeTestCount}</p>
               </div>
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -306,8 +352,8 @@ export default function TeacherDashboard() {
                 <span className="material-symbols-outlined">trending_up</span>
               </div>
               <div>
-                <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Avg. Completion</p>
-                <p className="text-2xl font-bold text-[#0b1c30]">84%</p>
+                <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Draft Tests</p>
+                <p className="text-2xl font-bold text-[#0b1c30]">{draftTestCount}</p>
               </div>
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -315,8 +361,8 @@ export default function TeacherDashboard() {
                 <span className="material-symbols-outlined">history</span>
               </div>
               <div>
-                <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Recent Activity</p>
-                <p className="text-2xl font-bold text-[#0b1c30]">2hrs ago</p>
+                <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Questions</p>
+                <p className="text-2xl font-bold text-[#0b1c30]">{totalQuestionCount}</p>
               </div>
             </div>
           </div>
@@ -346,7 +392,19 @@ export default function TeacherDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredTests.length > 0 ? (
+                  {loadingTests ? (
+                    <tr>
+                      <td className="px-6 py-10 text-center text-slate-500" colSpan="5">
+                        Loading tests from Supabase...
+                      </td>
+                    </tr>
+                  ) : loadError ? (
+                    <tr>
+                      <td className="px-6 py-10 text-center text-[#ba1a1a]" colSpan="5">
+                        {loadError}
+                      </td>
+                    </tr>
+                  ) : filteredTests.length > 0 ? (
                     filteredTests.map(test => (
                       <tr key={test.id} className="hover:bg-indigo-50/30 transition-colors group">
                         <td className="px-6 py-5">
@@ -454,7 +512,7 @@ export default function TeacherDashboard() {
             <div className="flex items-start justify-between gap-4 mb-5">
               <div>
                 <h3 className="text-xl font-bold text-[#0b1c30]">Create New Test</h3>
-                <p className="text-sm text-[#464553] mt-1">Provide the test name, passcode, and duration (in seconds).</p>
+                <p className="text-sm text-[#464553] mt-1">Provide the test name, passcode, and duration (in minutes).</p>
               </div>
               <button type="button" className="h-9 w-9 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors" onClick={closeCreateDialog} aria-label="Close create dialog">
                 <span className="material-symbols-outlined">close</span>
@@ -473,8 +531,8 @@ export default function TeacherDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[#0b1c30] mb-2">Duration (seconds)</label>
-                <input value={newTestDuration} onChange={(e) => setNewTestDuration(e.target.value)} placeholder="e.g. 3600" type="number" min="1" className="w-full px-4 py-3 rounded-xl bg-slate-100 border border-transparent focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" required />
+                <label className="block text-sm font-semibold text-[#0b1c30] mb-2">Duration (minutes)</label>
+                <input value={newTestDuration} onChange={(e) => setNewTestDuration(e.target.value)} placeholder="e.g. 60" type="number" min="1" className="w-full px-4 py-3 rounded-xl bg-slate-100 border border-transparent focus:outline-none focus:border-indigo-500 focus:bg-white transition-all" required />
               </div>
 
               {createError && <p className="text-sm text-[#ba1a1a]">{createError}</p>}

@@ -1,45 +1,109 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiRequest, getStoredUser } from '../config/api';
 
 export default function Leaderboard() {
   const navigate = useNavigate();
   const [userRole, setUserRole] = useState('student');
   const [currentUserName, setCurrentUserName] = useState('');
+  const [currentUserIdentifier, setCurrentUserIdentifier] = useState('');
   const [submissions, setSubmissions] = useState([]);
-  const [selectedTest, setSelectedTest] = useState('Advanced Physics Assessment');
+  const [availableTests, setAvailableTests] = useState([]);
+  const [selectedTest, setSelectedTest] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('quizflow_current_user'));
-    if (user) {
-      setUserRole(user.role);
-      setCurrentUserName(user.name);
-    } else {
+    const user = getStoredUser();
+    if (!user) {
       navigate('/login');
+      return;
     }
 
-    const savedSubmissions = JSON.parse(localStorage.getItem('quizflow_submissions') || '[]');
-    setSubmissions(savedSubmissions);
+    setUserRole(user.role);
+    setCurrentUserName(user.name || user.identifier || 'User');
+    setCurrentUserIdentifier(user.identifier || '');
+
+    let isMounted = true;
+
+    const loadLeaderboard = async () => {
+      setLoading(true);
+      setLoadError('');
+
+      try {
+        if (user.role === 'teacher') {
+          const teacherTests = await apiRequest('/tests/my-tests');
+          const tests = teacherTests.map((test) => ({
+            value: String(test.id),
+            label: test.testName,
+          }));
+
+          if (!isMounted) return;
+
+          setAvailableTests(tests);
+          const firstTest = tests[0] || null;
+          setSelectedTest(firstTest?.value || '');
+
+          if (firstTest) {
+            const results = await apiRequest(`/tests/${firstTest.value}/results`);
+            if (isMounted) setSubmissions(results);
+          } else {
+            if (isMounted) setSubmissions([]);
+          }
+        } else {
+          const results = await apiRequest('/tests/results/my-results');
+          const tests = Array.from(
+            new Map(results.map((result) => [String(result.testId), result.testName || `Test ${result.testId}`])).entries()
+          ).map(([value, label]) => ({ value, label }));
+
+          if (!isMounted) return;
+
+          setAvailableTests(tests);
+          setSelectedTest(tests[0]?.value || '');
+          setSubmissions(results);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error.message || 'Unable to load leaderboard.');
+          setSubmissions([]);
+          setAvailableTests([]);
+          setSelectedTest('');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadLeaderboard();
+
+    return () => {
+      isMounted = false;
+    };
   }, [navigate]);
 
-  const availableTests = Array.from(new Set(submissions.map((submission) => submission.testName)));
-  const testOptions = availableTests.length > 0 ? availableTests : ['Advanced Physics Assessment'];
   useEffect(() => {
-    if (availableTests.length > 0 && !availableTests.includes(selectedTest)) {
-      setSelectedTest(availableTests[0]);
+    if (!selectedTest) return;
+
+    if (userRole === 'teacher') {
+      apiRequest(`/tests/${selectedTest}/results`)
+        .then((results) => setSubmissions(results))
+        .catch((error) => setLoadError(error.message || 'Unable to load results.'));
     }
-  }, [availableTests, selectedTest]);
+  }, [selectedTest, userRole]);
 
   const visibleSubmissions = submissions
-    .filter((submission) => submission.testName === selectedTest)
-    .filter((submission) => submission.studentName && submission.studentName.trim())
-    .filter((submission) => userRole === 'teacher' || submission.studentName === currentUserName)
+    .filter((submission) => !selectedTest || String(submission.testId) === String(selectedTest))
+    .filter((submission) => userRole === 'teacher' || submission.username === currentUserIdentifier)
     .sort((left, right) => right.score - left.score || new Date(left.submittedAt) - new Date(right.submittedAt));
 
   const leaderboardRows = visibleSubmissions.map((submission, index) => ({
     ...submission,
+    studentName: submission.username,
     rank: index + 1,
-    scoreText: `${submission.correctCount}/${submission.totalQuestions}`,
-    percentText: `${submission.score}%`,
+    scoreText: `${submission.score}/${submission.total}`,
+    percentText: `${submission.total > 0 ? Math.round((submission.score / submission.total) * 100) : 0}%`,
     submittedText: new Date(submission.submittedAt).toLocaleString([], {
       month: 'short',
       day: 'numeric',
@@ -50,7 +114,7 @@ export default function Leaderboard() {
   }));
 
   const topThree = leaderboardRows.slice(0, 3);
-  const currentUserSubmission = leaderboardRows.find((row) => row.studentName === currentUserName);
+  const currentUserSubmission = leaderboardRows.find((row) => row.username === currentUserIdentifier);
 
   return (
     <div className="bg-[#f8f9ff] text-[#0b1c30] font-sans min-h-screen antialiased">
@@ -94,8 +158,8 @@ export default function Leaderboard() {
             <label className="text-sm font-semibold text-[#464553]">Filter by Assessment</label>
             <div className="flex gap-2">
               <select value={selectedTest} onChange={(e) => setSelectedTest(e.target.value)} className="flex-grow bg-slate-100 border-none rounded-lg text-sm font-semibold focus:ring-2 focus:ring-primary py-3 px-4 focus:outline-none">
-                {testOptions.map((testName) => (
-                  <option key={testName} value={testName}>{testName}</option>
+                {availableTests.map((test) => (
+                  <option key={test.value} value={test.value}>{test.label}</option>
                 ))}
               </select>
               <button className="bg-[#1f108e] text-white px-4 rounded-lg hover:opacity-90 transition-all active:scale-95">
@@ -107,7 +171,15 @@ export default function Leaderboard() {
 
         {/* Podium / Bento Highlights */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {topThree.length > 0 ? (
+          {loading ? (
+            <div className="md:col-span-3 bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
+              Loading leaderboard from Supabase...
+            </div>
+          ) : loadError ? (
+            <div className="md:col-span-3 bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
+              {loadError}
+            </div>
+          ) : topThree.length > 0 ? (
             topThree.map((submission, index) => {
               const badgeStyles = [
                 { wrapper: 'order-1 md:order-2 bg-indigo-50 border-2 border-indigo-200 p-8 shadow-md md:scale-105 z-10', rank: 'bg-yellow-400 text-yellow-900 w-10 h-10 border-4 border-white shadow-md', label: 'Highest Performance' },
@@ -188,7 +260,7 @@ export default function Leaderboard() {
                 ) : (
                   <tr>
                     <td className="px-6 py-10 text-center text-slate-500" colSpan="6">
-                      No student submissions found for {selectedTest}.
+                      No student submissions found for the selected test.
                     </td>
                   </tr>
                 )}
