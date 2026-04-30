@@ -49,19 +49,15 @@ export default function Login() {
     setShowPassword(!showPassword);
   };
 
-  const socialLogin = () => {
-    navigate('/signup');
-  };
-
   return (
-    <div className="bg-[#f8f9ff] font-sans text-[#0b1c30] min-h-screen flex items-center justify-center p-4 md:p-16 relative overflow-hidden">
+    <div className="bg-[#f8f9ff] font-sans text-[#0b1c30] min-h-screen flex items-center justify-center p-3 sm:p-4 md:p-16 relative overflow-hidden">
       {/* Decorative Background Elements */}
       <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-[#3730a3]/20 rounded-full blur-3xl"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-[#86f2e4]/20 rounded-full blur-3xl"></div>
       
-      <main className="w-full max-w-[1200px] grid md:grid-cols-2 bg-white rounded-xl shadow-2xl overflow-hidden z-10">
+      <main className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-white rounded-xl shadow-2xl overflow-hidden z-10">
         {/* Brand Visual Side */}
-        <div className="hidden md:flex flex-col justify-between p-12 bg-[#3730a3] relative overflow-hidden">
+        <div className="hidden md:flex flex-col justify-between p-8 lg:p-12 bg-[#3730a3] relative overflow-hidden">
           <div className="z-20">
             <div className="flex items-center gap-2 mb-8">
               <span className="material-symbols-outlined text-white text-[40px]">auto_stories</span>
@@ -90,7 +86,7 @@ export default function Login() {
         </div>
 
         {/* Login Form Side */}
-        <div className="p-6 md:p-12 flex flex-col justify-center relative">
+        <div className="p-5 sm:p-6 md:p-12 flex flex-col justify-center relative">
           <button 
             onClick={() => navigate('/')} 
             className="flex items-center gap-2 text-slate-500 hover:text-[#1f108e] text-sm font-bold transition-colors mb-4 self-start"
@@ -106,8 +102,8 @@ export default function Login() {
               <h1 className="text-2xl font-bold text-[#1f108e]">QuizFlow</h1>
             </div>
             <div className="mb-8">
-              <h2 className="text-3xl font-bold text-[#0b1c30] mb-1">Welcome Back</h2>
-              <p className="text-sm text-[#464553]">Please enter your credentials to access your dashboard.</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#0b1c30] mb-1">Welcome Back</h2>
+              <p className="text-xs sm:text-sm text-[#464553]">Please enter your credentials to access your dashboard.</p>
             </div>
 
             {/* Error State Placeholder */}
@@ -180,31 +176,6 @@ export default function Login() {
                 Don't have an account?{' '}
                 <a className="text-[#1f108e] font-bold hover:underline cursor-pointer" onClick={() => navigate('/signup')}>Create an account</a>
               </p>
-              
-              <div className="flex items-center gap-4 py-2">
-                <div className="h-[1px] flex-grow bg-[#c8c4d5]/30"></div>
-                <span className="text-xs text-[#777584]">OR CONTINUE WITH</span>
-                <div className="h-[1px] flex-grow bg-[#c8c4d5]/30"></div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <button 
-                  type="button"
-                  className="flex items-center justify-center gap-2 h-[48px] border border-[#c8c4d5] rounded-lg hover:bg-[#eff4ff] transition-colors" 
-                  onClick={socialLogin}
-                >
-                  <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXvu1ApvwERO1aw3gzDl2lP2EGU2XHH9kmoR8MsRrzy-2gZRPjfSiYc0R4A9CT1OXw34ws3WN_GrZo1_wX0DXHzqaZhLWzv4pt0h_LxRfN5-pv_hkgVaKz33el3pL141yx0LbMUfBL1RbZojGV0z-mKqgwgGj6grKP-C51HfJUu5vBB-pX-7pS6I90n1u1JXfwj9WtnRvfiLFNAyuknEIewDg2kWZUF9vrIRaPJr2wipKh25hx2GKCWkVOPM4sV94rIBXOBDp2skZe" />
-                  <span className="text-sm font-semibold">Google</span>
-                </button>
-                <button 
-                  type="button"
-                  className="flex items-center justify-center gap-2 h-[48px] border border-[#c8c4d5] rounded-lg hover:bg-[#eff4ff] transition-colors" 
-                  onClick={socialLogin}
-                >
-                  <img alt="Microsoft" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOJUauN2Nl5srTMTm4sgZf1yhzA-n8EGwlTsxsSwWZBooipMyrKUqhaJP5cVsbHnfCIpGUmZl_jvCWVdCMRN8CBZC8DIldG-LUgtjbhfk99pv6k7saDhm7HhgpQdCNKwQg8RS4v5ASlt_RmP49_05vFvVJONfeQ0kB4h4rAO9zNGMzRwhSoJIoEDjuWJNJSPwTlLiEV5KM0W6HS796x3yoY4Pr0pUjy6oeCBo-Ypd4-e7ydSiiBHcMBA7bQxgmXFAL4CjuqX0Jp7c5" />
-                  <span className="text-sm font-semibold">Microsoft</span>
-                </button>
-              </div>
             </div>
           </div>
 

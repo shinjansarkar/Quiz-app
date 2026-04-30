@@ -8,21 +8,21 @@ export default function Home() {
     <div className="bg-[#f8f9ff] text-[#0b1c30] font-sans min-h-screen flex flex-col antialiased">
       {/* Top Navigation */}
       <header className="sticky top-0 w-full bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm z-50">
-        <div className="max-w-7xl mx-auto flex justify-between items-center px-6 h-16">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-0 min-h-16">
           <div className="flex items-center gap-8">
             <span className="text-xl font-bold tracking-tight text-indigo-700">QuizFlow</span>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-auto">
             <button 
               onClick={() => navigate('/login')} 
-              className="px-4 py-2 text-[#1f108e] text-sm font-semibold hover:bg-[#1f108e]/5 rounded-lg transition-all"
+              className="px-3 sm:px-4 py-2 text-[#1f108e] text-sm font-semibold hover:bg-[#1f108e]/5 rounded-lg transition-all"
             >
               Login
             </button>
             <button 
               onClick={() => navigate('/signup')} 
-              className="px-4 py-2 bg-[#1f108e] text-white text-sm font-semibold rounded-lg hover:opacity-90 shadow-md transition-all active:scale-95"
+              className="px-3 sm:px-4 py-2 bg-[#1f108e] text-white text-sm font-semibold rounded-lg hover:opacity-90 shadow-md transition-all active:scale-95"
             >
               Sign Up
             </button>
@@ -32,7 +32,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <main className="flex-grow">
-        <section className="max-w-7xl mx-auto px-6 py-12 md:py-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10 md:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-12 items-center">
           {/* Left Column: Copy */}
           <div className="flex flex-col gap-6">
             <div>
@@ -46,23 +46,23 @@ export default function Home() {
             <p className="text-lg text-[#464553] max-w-lg leading-relaxed">
               QuizFlow transforms the testing experience into a focused journey. Designed for clarity, academic integrity, and distraction-free progress.
             </p>
-            <div className="flex flex-wrap gap-4 mt-2">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-2">
               <button 
                 onClick={() => navigate('/signup')} 
-                className="px-8 py-3 bg-[#1f108e] text-white rounded-xl font-bold shadow-lg hover:opacity-90 active:scale-95 transition-all"
+                className="w-full sm:w-auto px-8 py-3 bg-[#1f108e] text-white rounded-xl font-bold shadow-lg hover:opacity-90 active:scale-95 transition-all"
               >
                 Register Yourself
               </button>
               <button 
                 onClick={() => navigate('/login')} 
-                className="px-8 py-3 border-2 border-[#1f108e] text-[#1f108e] font-bold rounded-xl hover:bg-[#1f108e]/5 active:scale-95 transition-all"
+                className="w-full sm:w-auto px-8 py-3 border-2 border-[#1f108e] text-[#1f108e] font-bold rounded-xl hover:bg-[#1f108e]/5 active:scale-95 transition-all"
               >
                 Login
               </button>
             </div>
             
             {/* Social Proof */}
-            <div className="flex items-center gap-3 mt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-4">
               <div className="flex -space-x-3">
                 <img className="w-8 h-8 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDpkOEkaBKKh1xqCwS5fQTRqLbfKPQ1dJknMpEe3CiyvFSUcprkIYbtGHOirSpsCADP8xyG2I4CmmsL6Eb3ZMZ3GhELZkG8FZZpK7c9euUrhCvaNUZ_RJh88QsnG1ZoHjTrjfTND4EgiQ-OLLSmHOvG3Ul5mDcgOfNeZUogsPbFyCHqX2y7MNnQvToalZT-V1JMcuwRakafw3UbLyxQHpb8o7RQwdC41CeS9OOeiwJK4iDTCcAO6wOA3-pChR9Cfo7FaipsJL9UPtj" alt="User 1" />
                 <img className="w-8 h-8 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJZTKpdgIvHYgJw2krAu0TzXHMxp1-NAE0EblBxd1HtuOz-RmFlpFjI8zhfkPo94w_vuQhFBalLYNxgtEbm_zVtMpAb6e62UCSaeVjV5kRJBO78Pzjgyzo6dslY-ssPpw8-Yg02xT4RLJOEXmVxvjruevipEikk0uLP86xa23g_3otLbD946gCFrOefBQxBBz0Ljk7EO0J_gsawpJbDNX-Qj1nUGPwIsCnOlJpURXGwYCGiVmXC58HNZtLMibnKvqp-ZhwifCqSTJ-" alt="User 2" />
@@ -75,9 +75,9 @@ export default function Home() {
           </div>
 
           {/* Right Column: Visual Mockup */}
-          <div className="relative grid grid-cols-12 gap-4 bg-[#eff4ff]/50 p-6 rounded-3xl border border-slate-100 shadow-inner">
+          <div className="relative grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-4 bg-[#eff4ff]/50 p-4 sm:p-6 rounded-3xl border border-slate-100 shadow-inner">
             {/* Physics 101 Card */}
-            <div className="col-span-8 bg-white p-6 rounded-2xl border border-slate-100 shadow-md">
+            <div className="col-span-1 sm:col-span-2 md:col-span-8 bg-white p-5 sm:p-6 rounded-2xl border border-slate-100 shadow-md">
               <div className="flex justify-between items-center mb-4">
                 <div>
                   <h3 className="text-lg font-bold text-[#0b1c30]">Physics 101</h3>
@@ -103,7 +103,7 @@ export default function Home() {
             </div>
 
             {/* Timer Card */}
-            <div className="col-span-4 bg-[#1f108e] text-white p-6 rounded-2xl flex flex-col justify-between items-center text-center shadow-md">
+            <div className="col-span-1 sm:col-span-2 md:col-span-4 bg-[#1f108e] text-white p-5 sm:p-6 rounded-2xl flex flex-col justify-between items-center text-center shadow-md min-h-[140px]">
               <span className="material-symbols-outlined text-2xl">schedule</span>
               <div>
                 <span className="text-2xl font-extrabold block">45:00</span>
@@ -112,7 +112,7 @@ export default function Home() {
             </div>
 
             {/* High Score Card */}
-            <div className="col-span-7 bg-white p-4 rounded-2xl border border-slate-100 flex items-center gap-3 shadow-md">
+            <div className="col-span-1 sm:col-span-1 md:col-span-7 bg-white p-4 rounded-2xl border border-slate-100 flex items-center gap-3 shadow-md">
               <div className="p-3 bg-[#86f2e4]/20 text-[#006a61] rounded-xl">
                 <span className="material-symbols-outlined">campaign</span>
               </div>
@@ -123,7 +123,7 @@ export default function Home() {
             </div>
 
             {/* Class Avg Card */}
-            <div className="col-span-5 bg-[#e5eeff] text-[#1f108e] p-4 rounded-2xl flex items-center gap-3 border border-[#c3c0ff]/50 shadow-md">
+            <div className="col-span-1 sm:col-span-1 md:col-span-5 bg-[#e5eeff] text-[#1f108e] p-4 rounded-2xl flex items-center gap-3 border border-[#c3c0ff]/50 shadow-md">
               <div className="p-2 bg-white text-[#1f108e] rounded-lg">
                 <span className="material-symbols-outlined text-sm">bar_chart</span>
               </div>

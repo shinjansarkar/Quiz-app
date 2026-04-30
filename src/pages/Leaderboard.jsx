@@ -120,8 +120,8 @@ export default function Leaderboard() {
     <div className="bg-[#f8f9ff] text-[#0b1c30] font-sans min-h-screen antialiased">
       {/* TopAppBar */}
       <header className="bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm sticky top-0 w-full z-50 h-16 flex items-center">
-        <nav className="sticky top-0 w-full flex justify-between items-center px-6 h-16 max-w-7xl mx-auto">
-          <div className="flex items-center gap-8">
+        <nav className="sticky top-0 w-full flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center px-4 sm:px-6 py-3 sm:py-0 min-h-16 max-w-7xl mx-auto">
+          <div className="flex items-center gap-4 sm:gap-8">
             <span className="text-xl font-bold tracking-tight text-indigo-700">QuizFlow</span>
             <div className="hidden md:flex gap-6">
               <a 
@@ -133,7 +133,7 @@ export default function Leaderboard() {
               <a className="text-indigo-600 border-b-2 border-indigo-600 pb-1 text-sm font-semibold">Leaderboard</a>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 self-end sm:self-auto">
             <button className="p-2 transition-colors duration-200 hover:bg-slate-50 rounded-full active:scale-95 duration-150">
               <span className="material-symbols-outlined text-slate-600">notifications</span>
             </button>
@@ -147,22 +147,22 @@ export default function Leaderboard() {
         </nav>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
         {/* Hero Section & Filters */}
         <section className="mb-12 grid grid-cols-1 lg:grid-cols-12 gap-6 items-end">
           <div className="lg:col-span-8">
             <h1 className="text-3xl font-bold text-[#1f108e] mb-2">Academic Standings</h1>
             <p className="text-lg text-[#464553] max-w-2xl">Visualizing student performance for the selected assessment.</p>
           </div>
-          <div className="lg:col-span-4 flex flex-col gap-2">
+          <div className="lg:col-span-4 flex flex-col gap-2 w-full">
             <label className="text-sm font-semibold text-[#464553]">Filter by Assessment</label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <select value={selectedTest} onChange={(e) => setSelectedTest(e.target.value)} className="flex-grow bg-slate-100 border-none rounded-lg text-sm font-semibold focus:ring-2 focus:ring-primary py-3 px-4 focus:outline-none">
                 {availableTests.map((test) => (
                   <option key={test.value} value={test.value}>{test.label}</option>
                 ))}
               </select>
-              <button className="bg-[#1f108e] text-white px-4 rounded-lg hover:opacity-90 transition-all active:scale-95">
+              <button className="bg-[#1f108e] text-white px-4 py-3 rounded-lg hover:opacity-90 transition-all active:scale-95">
                 <span className="material-symbols-outlined">tune</span>
               </button>
             </div>
@@ -253,7 +253,12 @@ export default function Leaderboard() {
                       </td>
                       <td className="px-6 py-4 text-[#464553] text-xs">{submission.submittedText}</td>
                       <td className="px-6 py-4 text-right">
-                        <button className="text-indigo-600 hover:underline text-sm font-semibold" onClick={() => navigate('/results')}>View Details</button>
+                        <button
+                          className="text-indigo-600 hover:underline text-sm font-semibold"
+                          onClick={() => navigate('/results', { state: { submission } })}
+                        >
+                          View Details
+                        </button>
                       </td>
                     </tr>
                   ))

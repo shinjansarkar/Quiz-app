@@ -4,6 +4,7 @@ import { apiRequest, clearAuthSession, getStoredUser } from '../config/api';
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [userName, setUserName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState([]);
@@ -173,7 +174,8 @@ export default function StudentDashboard() {
   return (
     <div className="bg-[#f8f9ff] text-[#0b1c30] font-sans min-h-screen">
       {/* Sidebar Navigation */}
-      <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-50 border-r border-slate-200 flex flex-col p-4 gap-2 text-sm font-medium z-50">
+      {isSidebarOpen && <div className="fixed inset-0 bg-slate-900/30 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
+      <aside className={`h-screen w-64 fixed left-0 top-0 bg-slate-50 border-r border-slate-200 flex flex-col p-4 gap-2 text-sm font-medium z-50 transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:flex`}>
         <div className="mb-8 px-2 flex items-center gap-3">
           <div className="w-10 h-10 bg-[#e5eeff] rounded-lg flex items-center justify-center text-[#1f108e]">
             <span className="material-symbols-outlined">school</span>
@@ -206,17 +208,20 @@ export default function StudentDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="ml-64 min-h-screen">
+      <main className="min-h-screen md:ml-64">
         {/* Top App Bar */}
-        <header className="sticky top-0 w-full flex justify-between items-center px-6 h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm z-40">
-          <div className="flex items-center gap-8">
+        <header className="sticky top-0 w-full flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center px-4 sm:px-6 py-3 sm:py-0 min-h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm z-40">
+          <div className="flex items-center gap-4 sm:gap-8">
+            <button className="md:hidden p-2 -ml-2 text-slate-600" onClick={() => setIsSidebarOpen(true)} type="button">
+              <span className="material-symbols-outlined">menu</span>
+            </button>
             <span className="text-xl font-bold tracking-tight text-indigo-700">QuizFlow</span>
             <nav className="hidden md:flex gap-6">
               <a className="text-indigo-600 border-b-2 border-indigo-600 pb-1 text-sm font-semibold cursor-pointer" onClick={() => navigate('/student-dashboard')}>Dashboard</a>
               <a className="text-slate-600 hover:text-indigo-500 transition-colors duration-200 text-sm font-semibold cursor-pointer" onClick={() => navigate('/leaderboard')}>Leaderboard</a>
             </nav>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 self-end sm:self-auto">
             <div className="relative">
               <button
                 className="p-2 text-slate-600 hover:bg-slate-50 rounded-full transition-colors active:scale-95 duration-150 relative"
@@ -288,7 +293,7 @@ export default function StudentDashboard() {
         </header>
 
         {/* Content Canvas */}
-        <div className="max-w-7xl mx-auto p-8">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 pb-24 md:pb-8">
           {notifications.length > 0 && (
             <div className="mb-8 bg-[#e5eeff] border border-indigo-100 rounded-2xl px-5 py-4 flex items-start gap-4 shadow-sm">
               <div className="w-11 h-11 rounded-xl bg-white text-indigo-700 flex items-center justify-center flex-shrink-0 shadow-sm">

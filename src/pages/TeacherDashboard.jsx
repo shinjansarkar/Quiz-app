@@ -4,6 +4,7 @@ import { apiRequest, clearAuthSession, getStoredUser } from '../config/api';
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [teacherUser, setTeacherUser] = useState(null);
   const [teacherName, setTeacherName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -256,7 +257,8 @@ export default function TeacherDashboard() {
   return (
     <div className="flex min-h-screen bg-[#f8f9ff] text-[#0b1c30] font-sans">
       {/* SideNavBar Shell */}
-      <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-50 border-r border-slate-200 z-50">
+      {isSidebarOpen && <div className="fixed inset-0 bg-slate-900/30 z-40 md:hidden" onClick={() => setIsSidebarOpen(false)} />}
+      <aside className={`h-screen w-64 fixed left-0 top-0 bg-slate-50 border-r border-slate-200 z-50 transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:flex`}>
         <div className="flex flex-col h-full p-4 gap-2 text-sm font-medium">
           <div className="px-3 py-6">
             <h1 className="text-lg font-black text-indigo-700">Learning Center</h1>
@@ -286,18 +288,21 @@ export default function TeacherDashboard() {
       </aside>
 
       {/* Main Content Wrapper */}
-      <main className="flex-1 ml-64 min-h-screen flex flex-col">
+      <main className="flex-1 min-h-screen flex flex-col md:ml-64">
         {/* TopAppBar Shell */}
         <header className="sticky top-0 w-full bg-white/90 backdrop-blur-md border-b border-slate-200 z-40 shadow-sm">
-          <div className="flex justify-between items-center px-6 h-16 max-w-7xl mx-auto font-sans">
-            <div className="flex items-center gap-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center px-4 sm:px-6 py-3 sm:py-0 min-h-16 max-w-7xl mx-auto font-sans">
+            <div className="flex items-center gap-4 sm:gap-8">
+              <button className="md:hidden p-2 -ml-2 text-slate-600" onClick={() => setIsSidebarOpen(true)} type="button">
+                <span className="material-symbols-outlined">menu</span>
+              </button>
               <span className="text-xl font-bold tracking-tight text-indigo-700">QuizFlow</span>
               <nav className="hidden md:flex items-center gap-6">
                 <a className="text-indigo-600 border-b-2 border-indigo-600 pb-1 text-sm font-semibold cursor-pointer" onClick={() => navigate('/teacher-dashboard')}>Exams</a>
                 <a className="text-slate-600 hover:text-indigo-500 text-sm font-semibold cursor-pointer" onClick={() => navigate('/leaderboard')}>Leaderboard</a>
               </nav>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 self-end sm:self-auto">
               <div className="relative hidden sm:block">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                 <input
@@ -323,7 +328,7 @@ export default function TeacherDashboard() {
         </header>
 
         {/* Canvas */}
-        <div className="p-8 max-w-7xl mx-auto w-full space-y-8">
+        <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-8 pb-24 md:pb-8">
           {/* Header Section */}
           <div className="flex justify-between items-end">
             <div className="space-y-1">

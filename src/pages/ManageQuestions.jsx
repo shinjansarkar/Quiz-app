@@ -223,7 +223,7 @@ export default function ManageQuestions() {
           </div>
         </header>
 
-        <div className="flex-1 p-6 md:p-16 space-y-8">
+        <div className="flex-1 p-4 sm:p-6 md:p-16 space-y-8 pb-24 md:pb-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <nav className="flex items-center gap-2 text-xs font-medium text-slate-500 mb-2">
@@ -234,8 +234,8 @@ export default function ManageQuestions() {
               <h1 className="text-3xl font-bold text-[#0b1c30]">Manage Questions</h1>
               <p className="text-[#464553] mt-1">Review, edit, and organize assessment items for your students.</p>
             </div>
-            <div className="flex gap-3">
-              <button className="flex items-center justify-center gap-2 px-5 py-3 bg-[#1f108e] text-white rounded-lg font-semibold hover:opacity-90 shadow-lg transition-all active:scale-95" onClick={handleStartAdd}>
+            <div className="flex gap-3 w-full md:w-auto">
+              <button className="flex items-center justify-center gap-2 px-5 py-3 bg-[#1f108e] text-white rounded-lg font-semibold hover:opacity-90 shadow-lg transition-all active:scale-95 w-full md:w-auto" onClick={handleStartAdd}>
                 <span className="material-symbols-outlined">add_circle</span>
                 Add New Question
               </button>
@@ -243,7 +243,7 @@ export default function ManageQuestions() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <section className="lg:col-span-5 bg-white rounded-xl border border-[#c8c4d5] shadow-sm p-6 sticky top-24">
+            <section className="lg:col-span-5 bg-white rounded-xl border border-[#c8c4d5] shadow-sm p-5 sm:p-6 sticky top-24">
               <div className="mb-6 flex items-center justify-between">
                 <h3 className="text-2xl font-bold flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#1f108e]">edit_note</span>
@@ -293,7 +293,7 @@ export default function ManageQuestions() {
             </section>
 
             <section className="lg:col-span-7 space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h3 className="text-xl font-bold text-[#0b1c30]">Test Questions ({questionCount})</h3>
                 <div className="flex items-center gap-2">
                   <button className="p-2 text-[#464553] hover:bg-white rounded-lg transition-colors border border-transparent hover:border-slate-200"><span className="material-symbols-outlined">filter_list</span></button>

@@ -65,14 +65,10 @@ export default function Signup() {
     setShowPassword(!showPassword);
   };
 
-  const socialSignup = () => {
-    navigate('/signup');
-  };
-
   return (
     <div className="bg-[#f8f9ff] text-[#0b1c30] font-sans min-h-screen flex flex-col antialiased">
       {/* Top Bar */}
-      <header className="bg-white/90 backdrop-blur-md sticky top-0 w-full flex justify-between items-center px-6 h-16 max-w-7xl mx-auto z-50">
+      <header className="bg-white/90 backdrop-blur-md sticky top-0 w-full flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center px-4 sm:px-6 py-3 sm:py-0 min-h-16 max-w-7xl mx-auto z-50">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate('/')} 
@@ -88,9 +84,9 @@ export default function Signup() {
         </div>
       </header>
 
-      <main className="flex-grow flex items-center justify-center p-4 md:p-16">
+      <main className="flex-grow flex items-center justify-center p-3 sm:p-4 md:p-16">
         {/* Auth Card Container */}
-        <div className="w-full max-w-[520px] bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
+        <div className="w-full max-w-xl bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
           {/* Header Section */}
           <div className="p-6 md:p-8 text-center space-y-2 border-b border-slate-50">
             <h1 className="text-3xl font-bold text-[#0b1c30]">Create your account</h1>
@@ -98,7 +94,7 @@ export default function Signup() {
           </div>
 
           {/* Form Content */}
-          <div className="p-6 md:p-8 space-y-6">
+          <div className="p-5 sm:p-6 md:p-8 space-y-6">
             <form className="space-y-4" onSubmit={handleSubmit}>
               {/* Full Name */}
               <div className="space-y-1">
@@ -159,7 +155,7 @@ export default function Signup() {
               {/* Role Selector */}
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-[#0b1c30]">I am a...</label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Student Card */}
                   <label className="relative flex flex-col items-center justify-center p-6 border border-slate-200 rounded-lg cursor-pointer transition-all duration-200 hover:border-indigo-300 group">
                     <input 
@@ -205,24 +201,13 @@ export default function Signup() {
                 <span className="text-xs text-[#777584] px-2">OR REGISTER WITH</span>
                 <div className="h-px bg-slate-200 flex-grow"></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <button 
-                  type="button"
-                  className="flex items-center justify-center gap-2 py-2 px-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors duration-200 text-sm font-semibold" 
-                  onClick={socialSignup}
-                >
-                  <img alt="Google" className="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJH1agQo1duI5TZnfyGSo3jrpDtxkHO8NebiteGHWe2gT_KFlCLm_qz_DKnkLyyPk6UrWoulnLxZotQF3O4qKIC0_2LVOs8kNYKiO8-P2XsmPnOEMBFQMLiSq2pnujrKYS0qBLfzNNMRG2jzYpygoo8Z4St2ap-loHSVsRjMsbPzDoIjKD5zGLpEAuG8aeVHWFmUfxJXJwHKUQb6za-uvuETN4i-lvOgw3JMWkBbH3sHhMxbkWHelzmWDazTXsGv7_dJALXzwqNnQW" />
-                  Google
-                </button>
-                <button 
-                  type="button"
-                  className="flex items-center justify-center gap-2 py-2 px-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors duration-200 text-sm font-semibold" 
-                  onClick={socialSignup}
-                >
-                  <span className="material-symbols-outlined text-[#0b1c30]">account_balance</span>
-                  University ID
-                </button>
-              </div>
+              <button 
+                type="button"
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors duration-200 text-sm font-semibold"
+              >
+                <span className="material-symbols-outlined text-[#0b1c30]">account_balance</span>
+                University ID
+              </button>
               <p className="text-sm text-[#464553] pt-4">
                 Already have an account?{' '}
                 <a className="text-[#1f108e] font-semibold hover:underline cursor-pointer" onClick={() => navigate('/login')}>Log in here</a>
