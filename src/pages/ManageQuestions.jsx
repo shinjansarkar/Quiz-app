@@ -202,24 +202,46 @@ export default function ManageQuestions() {
       </aside>
 
       <main className="md:ml-64 flex min-h-screen flex-col">
-        <header className="sticky top-0 z-50 flex items-center justify-between px-6 h-16 w-full bg-white border-b border-slate-200 shadow-sm">
-          <div className="flex items-center gap-4">
-            <button className="md:hidden material-symbols-outlined text-slate-600" onClick={() => navigate('/teacher-dashboard')}>menu</button>
-            <h2 className="text-2xl font-bold tracking-tight text-indigo-800">QuizFlow</h2>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="hidden sm:flex items-center bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
-              <span className="material-symbols-outlined text-slate-400 text-sm mr-2">search</span>
-              <input className="bg-transparent border-none focus:ring-0 text-sm w-48 text-[#0b1c30]" placeholder="Search questions..." type="text" />
+        <header className="sticky top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50 shadow-sm">
+          <div className="flex justify-between items-center px-4 sm:px-6 h-16 max-w-7xl mx-auto">
+            <div className="flex items-center gap-4">
+              <button className="md:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg" onClick={() => navigate('/teacher-dashboard')}>
+                <span className="material-symbols-outlined">menu</span>
+              </button>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+                  <span className="material-symbols-outlined text-sm">quiz</span>
+                </div>
+                <span className="text-xl font-black tracking-tight text-[#0b1c30]">QuizFlow</span>
+              </div>
+              <nav className="hidden md:flex items-center gap-6 ml-8">
+                <a className="text-slate-500 hover:text-indigo-600 text-sm font-semibold cursor-pointer transition-colors" onClick={() => navigate('/teacher-dashboard')}>Dashboard</a>
+                <a className="text-indigo-600 border-b-2 border-indigo-600 pb-1 text-sm font-bold cursor-pointer">Questions</a>
+              </nav>
             </div>
-            <button className="text-slate-600 hover:bg-slate-50 p-2 rounded-full transition-colors relative">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-2 right-2 w-2 h-2 bg-[#ba1a1a] rounded-full"></span>
-            </button>
-            <button className="text-indigo-700 font-semibold flex items-center gap-2 hover:bg-slate-50 p-1.5 px-3 rounded-lg transition-colors">
-              <span className="material-symbols-outlined">account_circle</span>
-              <span className="hidden sm:inline text-sm font-semibold">Instructor View</span>
-            </button>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="relative hidden sm:block">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+                <input
+                  className="pl-9 pr-4 py-1.5 bg-slate-100 border border-transparent rounded-full text-xs w-48 lg:w-64 focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+                  placeholder="Search questions..."
+                  type="text"
+                />
+              </div>
+              <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-all relative">
+                <span className="material-symbols-outlined text-xl">notifications</span>
+                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              </button>
+              <div className="flex items-center gap-3 ml-1 sm:ml-2 pl-3 sm:pl-4 border-l border-slate-200">
+                <div className="text-right hidden lg:block">
+                  <p className="text-[11px] font-black text-[#0b1c30] leading-tight">{currentUser?.name || 'Instructor'}</p>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Academic Lead</p>
+                </div>
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border border-slate-200 overflow-hidden shadow-sm ring-2 ring-indigo-50">
+                  <img alt="User profile" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJjynuGsPLOs9JljRIuJrxBxkiGlkIsw22gpP_0aCD9KkPnZiwPt_BAuXYVEMnhCfL293dVjVCx9oFEECYjiXKejTYHeKlwuEmf7L0JwVPe8CC8RB4WP_dtzHP7DaDAnaHSgV1fHFI0yIp-cyHnSuLm-9PyZFsteKvj5UCUYZlWCyFURH57kiDR3nBS2hqtwZwUOOktE25tZkcoXm6BfhYDyF2U5oQGwBSXqrgTa7r7lF5GdKC0xbmUQL39Fze2CBm672TMDR6w1IO" />
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 

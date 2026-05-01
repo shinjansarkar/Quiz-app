@@ -228,83 +228,81 @@ export default function StudentDashboard() {
       {/* Main Content Area */}
       <main className="min-h-screen md:ml-64">
         {/* Top App Bar */}
-        <header className="sticky top-0 w-full flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center px-4 sm:px-6 py-3 sm:py-0 min-h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm z-40">
-          <div className="flex items-center gap-4 sm:gap-8">
-            <button className="md:hidden p-2 -ml-2 text-slate-600" onClick={() => setIsSidebarOpen(true)} type="button">
-              <span className="material-symbols-outlined">menu</span>
-            </button>
-            <span className="text-xl font-bold tracking-tight text-indigo-700">QuizFlow</span>
-            <nav className="hidden md:flex gap-6">
-              <a className="text-indigo-600 border-b-2 border-indigo-600 pb-1 text-sm font-semibold cursor-pointer" onClick={() => navigate('/student-dashboard')}>Dashboard</a>
-              <a className="text-slate-600 hover:text-indigo-500 transition-colors duration-200 text-sm font-semibold cursor-pointer" onClick={() => navigate('/leaderboard')}>Leaderboard</a>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4 self-end sm:self-auto">
-            <div className="relative">
-              <button
-                className="p-2 text-slate-600 hover:bg-slate-50 rounded-full transition-colors active:scale-95 duration-150 relative"
-                onClick={() => {
-                  setIsNotificationsOpen((open) => !open);
-                }}
-                type="button"
-              >
-              <span className="material-symbols-outlined">notifications</span>
-                {unreadNotificationCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 bg-[#ba1a1a] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {unreadNotificationCount}
-                  </span>
-                )}
+        <header className="sticky top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-40 shadow-sm">
+          <div className="flex justify-between items-center px-4 sm:px-6 h-16 max-w-7xl mx-auto">
+            <div className="flex items-center gap-4">
+              <button className="md:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg" onClick={() => setIsSidebarOpen(true)} type="button">
+                <span className="material-symbols-outlined">menu</span>
               </button>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+                  <span className="material-symbols-outlined text-sm">school</span>
+                </div>
+                <span className="text-xl font-black tracking-tight text-[#0b1c30]">QuizFlow</span>
+              </div>
+              <nav className="hidden md:flex items-center gap-6 ml-8">
+                <a className="text-indigo-600 border-b-2 border-indigo-600 pb-1 text-sm font-bold cursor-pointer" onClick={() => navigate('/student-dashboard')}>Dashboard</a>
+                <a className="text-slate-500 hover:text-indigo-600 text-sm font-semibold cursor-pointer transition-colors" onClick={() => navigate('/leaderboard')}>Leaderboard</a>
+              </nav>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="relative">
+                <button
+                  className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-all relative"
+                  onClick={() => setIsNotificationsOpen((open) => !open)}
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-xl">notifications</span>
+                  {unreadNotificationCount > 0 && (
+                    <span className="absolute top-2 right-2 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">
+                      {unreadNotificationCount}
+                    </span>
+                  )}
+                </button>
 
-              {isNotificationsOpen && (
-                <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden z-50">
-                  <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
-                    <div>
-                      <h3 className="text-sm font-bold text-[#0b1c30]">Notifications</h3>
-                      <p className="text-xs text-slate-500">Latest updates from your teachers</p>
+                {isNotificationsOpen && (
+                  <div className="absolute right-0 mt-4 w-[calc(100vw-2rem)] sm:w-80 bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden z-50">
+                    <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+                      <div>
+                        <h3 className="text-sm font-black text-[#0b1c30]">Notifications</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Latest updates</p>
+                      </div>
+                      <button type="button" className="text-xs font-bold text-indigo-600 hover:underline" onClick={markNotificationsAsRead}>
+                        Mark all read
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      className="text-xs font-semibold text-indigo-600 hover:underline"
-                      onClick={markNotificationsAsRead}
-                    >
-                      Mark all read
-                    </button>
-                  </div>
-                  <div className="max-h-96 overflow-y-auto">
-                    {visibleNotifications.length > 0 ? (
-                      visibleNotifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          className={`px-4 py-3 border-b border-slate-100 last:border-b-0 ${notification.read ? 'bg-white' : 'bg-indigo-50/60'}`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5 w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center flex-shrink-0">
-                              <span className="material-symbols-outlined text-[18px]">campaign</span>
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-semibold text-[#0b1c30]">{notification.title}</p>
-                              <p className="text-sm text-[#464553]">{notification.message}</p>
-                              <p className="text-[11px] text-slate-400 mt-1">
-                                {new Date(notification.createdAt).toLocaleString()}
-                              </p>
+                    <div className="max-h-[min(400px,70vh)] overflow-y-auto">
+                      {visibleNotifications.length > 0 ? (
+                        visibleNotifications.map((notification) => (
+                          <div key={notification.id} className={`px-5 py-4 border-b border-slate-50 last:border-b-0 ${notification.read ? 'bg-white' : 'bg-indigo-50/30'}`}>
+                            <div className="flex items-start gap-4">
+                              <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center flex-shrink-0">
+                                <span className="material-symbols-outlined text-xl">campaign</span>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold text-[#0b1c30] leading-snug">{notification.title}</p>
+                                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{notification.message}</p>
+                                <p className="text-[10px] text-slate-400 mt-2 font-medium">{new Date(notification.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                              </div>
                             </div>
                           </div>
+                        ))
+                      ) : (
+                        <div className="px-5 py-12 text-center">
+                          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="material-symbols-outlined text-slate-300 text-3xl">notifications_off</span>
+                          </div>
+                          <p className="text-sm font-bold text-[#0b1c30]">No notifications yet</p>
+                          <p className="text-xs text-slate-400 mt-1">Check back later for updates</p>
                         </div>
-                      ))
-                    ) : (
-                      <div className="px-4 py-8 text-center">
-                        <span className="material-symbols-outlined text-slate-300 text-3xl">notifications_off</span>
-                        <p className="text-sm font-semibold text-[#0b1c30] mt-2">No notifications yet</p>
-                        <p className="text-xs text-slate-500">New tests created by teachers will appear here.</p>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-            <div className="h-8 w-8 rounded-full bg-slate-200 overflow-hidden border border-slate-300">
-              <img alt="User profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5t47lpWHVrqH6l9vqW6_60mNs4zfTtvcn6tNNuJy1JXs-wFmVxWaj2-z9_UTc5JxEGGjabLtBAMh6UGjaHEmxTZFuYrnW-Q5-qOqwWWweZa8-00-3-gE4QoJWr1Dhl31HPU091MhQOxF-21vv49_NbpmXV0N1Q42At5-MEdpDEwFrpcE1h3r3TEsARBPzPNLA6fLaG0WBSTGPXFBPOxmFLniga9fQ8WnVYx9Bid79Bj4Lg5UN9_0NiVkbClilu74gWK1p4VFO4B20" />
+                )}
+              </div>
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border border-slate-200 overflow-hidden shadow-sm ring-2 ring-indigo-50 ml-1">
+                <img alt="User profile" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5t47lpWHVrqH6l9vqW6_60mNs4zfTtvcn6tNNuJy1JXs-wFmVxWaj2-z9_UTc5JxEGGjabLtBAMh6UGjaHEmxTZFuYrnW-Q5-qOqwWWweZa8-00-3-gE4QoJWr1Dhl31HPU091MhQOxF-21vv49_NbpmXV0N1Q42At5-MEdpDEwFrpcE1h3r3TEsARBPzPNLA6fLaG0WBSTGPXFBPOxmFLniga9fQ8WnVYx9Bid79Bj4Lg5UN9_0NiVkbClilu74gWK1p4VFO4B20" />
+              </div>
             </div>
           </div>
         </header>

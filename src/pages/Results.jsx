@@ -89,23 +89,34 @@ export default function Results() {
   return (
     <div className="bg-[#f8f9ff] text-[#0b1c30] font-sans min-h-screen flex flex-col antialiased">
       {/* TopAppBar */}
-      <header className="sticky top-0 w-full flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center px-4 sm:px-6 py-3 sm:py-0 min-h-16 max-w-7xl mx-auto bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm z-50">
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-bold tracking-tight text-indigo-700">QuizFlow</span>
-        </div>
-        <nav className="hidden md:flex items-center gap-6 h-full">
-          <a className="text-slate-600 hover:text-indigo-500 transition-colors duration-200 cursor-pointer" onClick={() => navigate('/student-dashboard')}>Dashboard</a>
-          <a className="text-slate-600 hover:text-indigo-500 transition-colors duration-200 cursor-pointer" onClick={() => navigate('/leaderboard')}>Leaderboard</a>
-        </nav>
-        <div className="flex items-center gap-4">
-          <button className="p-2 text-slate-600 hover:bg-slate-50 rounded-full transition-colors active:scale-95 duration-150">
-            <span className="material-symbols-outlined">notifications</span>
-          </button>
-          <button className="p-2 text-slate-600 hover:bg-slate-50 rounded-full transition-colors active:scale-95 duration-150">
-            <span className="material-symbols-outlined">settings</span>
-          </button>
-          <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 ml-2">
-            <img alt="User profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBAerkbYOL7eQlamKO42NCiOP-8PAxDkU-RrO02HBZyk5kcgROYwNyOph8xcoPCNWBTQ3Ik5CsiQDeC6CNMmZ1-xxTKFibX_x-oF9_0xjPDeqKHiGpww1vZCvY5C1aza_G4EuWmBfo8t25VwFhhgGuWAjCpmUXxur-es2FPR7JvgBE6Lt6ZWei1wSrSHx_KdsPLVj7LxstNrL_mc_MqaThIrNqTe51QTMUK9JnjUCszIDFJRH-hqLUZuFxtvkws88xSrVbGN-9nIj7" />
+      <header className="sticky top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50 shadow-sm">
+        <div className="flex justify-between items-center px-4 sm:px-6 h-16 max-w-7xl mx-auto">
+          <div className="flex items-center gap-4">
+            <button className="md:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg" onClick={() => navigate('/student-dashboard')}>
+              <span className="material-symbols-outlined">arrow_back</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+                <span className="material-symbols-outlined text-sm">stars</span>
+              </div>
+              <span className="text-xl font-black tracking-tight text-[#0b1c30]">QuizFlow</span>
+            </div>
+            <nav className="hidden md:flex items-center gap-6 ml-8">
+              <a className="text-slate-500 hover:text-indigo-600 text-sm font-semibold cursor-pointer transition-colors" onClick={() => navigate('/student-dashboard')}>Dashboard</a>
+              <a className="text-slate-500 hover:text-indigo-600 text-sm font-semibold cursor-pointer transition-colors" onClick={() => navigate('/leaderboard')}>Leaderboard</a>
+            </nav>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-all relative">
+              <span className="material-symbols-outlined text-xl">notifications</span>
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+            </button>
+            <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-all">
+              <span className="material-symbols-outlined text-xl">settings</span>
+            </button>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border border-slate-200 overflow-hidden shadow-sm ring-2 ring-indigo-50 ml-1 sm:ml-2">
+              <img alt="User profile" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBAerkbYOL7eQlamKO42NCiOP-8PAxDkU-RrO02HBZyk5kcgROYwNyOph8xcoPCNWBTQ3Ik5CsiQDeC6CNMmZ1-xxTKFibX_x-oF9_0xjPDeqKHiGpww1vZCvY5C1aza_G4EuWmBfo8t25VwFhhgGuWAjCpmUXxur-es2FPR7JvgBE6Lt6ZWei1wSrSHx_KdsPLVj7LxstNrL_mc_MqaThIrNqTe51QTMUK9JnjUCszIDFJRH-hqLUZuFxtvkws88xSrVbGN-9nIj7" />
+            </div>
           </div>
         </div>
       </header>
