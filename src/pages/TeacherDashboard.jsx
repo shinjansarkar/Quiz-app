@@ -17,7 +17,9 @@ export default function TeacherDashboard() {
     name: test.testName,
     unit: test.published === 'yes' ? 'Published assessment' : 'Draft assessment',
     duration: `${test.duration} min`,
-    date: 'Saved in Supabase',
+    date: test.publishedAt 
+      ? new Date(test.publishedAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) 
+      : (test.published === 'yes' ? 'Published' : 'Draft'),
     status: test.published === 'yes' ? 'Active' : 'Draft',
     code: (test.testName || 'TX').slice(0, 2).toUpperCase(),
     passcode: test.passcode || '',

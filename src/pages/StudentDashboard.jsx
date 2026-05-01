@@ -8,6 +8,7 @@ export default function StudentDashboard() {
   const [userName, setUserName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState([]);
+  const [dismissedIds, setDismissedIds] = useState([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isPasscodeDialogOpen, setIsPasscodeDialogOpen] = useState(false);
   const [selectedTest, setSelectedTest] = useState(null);
@@ -46,6 +47,15 @@ export default function StudentDashboard() {
     }
 
     setUserName(user.name || user.identifier || 'Student');
+    
+    // Load dismissed IDs for this specific user
+    const storageKey = `dismissedNotifications_${user.identifier}`;
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      setDismissedIds(saved);
+    } catch (e) {
+      setDismissedIds([]);
+    }
   }, [navigate]);
 
   useEffect(() => {
@@ -122,14 +132,22 @@ export default function StudentDashboard() {
     setPasscodeError('');
   };
 
-  const unreadNotificationCount = notifications.filter((notification) => !notification.read).length;
+  const visibleNotifications = notifications.filter(
+    (n) => !dismissedIds.includes(n.testId)
+  );
+
+  const unreadNotificationCount = visibleNotifications.length;
 
   const markNotificationsAsRead = () => {
-    const updatedNotifications = notifications.map((notification) => ({
-      ...notification,
-      read: true,
-    }));
-    setNotifications(updatedNotifications);
+    const user = getStoredUser();
+    if (!user) return;
+
+    const storageKey = `dismissedNotifications_${user.identifier}`;
+    const allIds = notifications.map((n) => n.testId);
+    const updatedDismissed = [...new Set([...dismissedIds, ...allIds])];
+    
+    setDismissedIds(updatedDismissed);
+    localStorage.setItem(storageKey, JSON.stringify(updatedDismissed));
   };
 
   const submitPasscode = async (e) => {
@@ -227,7 +245,6 @@ export default function StudentDashboard() {
                 className="p-2 text-slate-600 hover:bg-slate-50 rounded-full transition-colors active:scale-95 duration-150 relative"
                 onClick={() => {
                   setIsNotificationsOpen((open) => !open);
-                  markNotificationsAsRead();
                 }}
                 type="button"
               >
@@ -255,8 +272,8 @@ export default function StudentDashboard() {
                     </button>
                   </div>
                   <div className="max-h-96 overflow-y-auto">
-                    {notifications.length > 0 ? (
-                      notifications.map((notification) => (
+                    {visibleNotifications.length > 0 ? (
+                      visibleNotifications.map((notification) => (
                         <div
                           key={notification.id}
                           className={`px-4 py-3 border-b border-slate-100 last:border-b-0 ${notification.read ? 'bg-white' : 'bg-indigo-50/60'}`}

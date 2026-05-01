@@ -12,6 +12,8 @@ export default function Results() {
   const [total, setTotal] = useState(0);
   const [timeTaken, setTimeTaken] = useState('--');
   const [testName, setTestName] = useState('Latest Assessment');
+  const [rank, setRank] = useState('--');
+  const [currentUserIdentifier, setCurrentUserIdentifier] = useState('');
 
   useEffect(() => {
     const user = getStoredUser();
@@ -26,6 +28,23 @@ export default function Results() {
     }
 
     setGreeting(`Excellent Work, ${user.name.split(' ')[0]}!`);
+    setCurrentUserIdentifier(user.identifier);
+
+    const fetchRank = (testId, userIdentifier) => {
+      if (!testId || !userIdentifier) return;
+      apiRequest(`/tests/${testId}/results`)
+        .then((allResults) => {
+          if (!Array.isArray(allResults)) return;
+          const sorted = allResults.sort(
+            (a, b) => b.score - a.score || new Date(a.submittedAt) - new Date(b.submittedAt)
+          );
+          const index = sorted.findIndex((r) => r.username === userIdentifier);
+          if (index !== -1) {
+            setRank(index + 1);
+          }
+        })
+        .catch(() => setRank('--'));
+    };
 
     const applyResult = (result) => {
       if (!result) return;
@@ -45,6 +64,11 @@ export default function Results() {
         const mins = Math.floor(computedTime / 60);
         const secs = computedTime % 60;
         setTimeTaken(`${mins}:${String(secs).padStart(2, '0')}`);
+      }
+
+      const testId = result.testId;
+      if (testId) {
+        fetchRank(testId, user.identifier);
       }
     };
 
@@ -160,7 +184,7 @@ export default function Results() {
               </div>
               <div>
                 <p className="text-[#464553] text-xs font-semibold">Class Rank</p>
-                <p className="text-2xl font-bold text-[#1f108e]">--</p>
+                <p className="text-2xl font-bold text-[#1f108e]">{rank}</p>
               </div>
             </div>
 

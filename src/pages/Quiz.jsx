@@ -102,16 +102,17 @@ export default function Quiz() {
     if (!currentUser) return;
 
     try {
+      const timeUsed = (Number(activeTest.durationSeconds || Number(activeTest.duration) * 60) || 900) - timeRemaining;
+
       const response = await apiRequest('/tests/submit', {
         method: 'POST',
         body: {
           testId: Number(activeTest.testId || activeTest.id),
           username: currentUser.identifier,
           answers: currentAnswers,
+          timeTaken: timeUsed,
         },
       });
-
-      const timeUsed = (Number(activeTest.durationSeconds || Number(activeTest.duration) * 60) || 900) - timeRemaining;
       navigate('/results', {
         state: {
           ...response,

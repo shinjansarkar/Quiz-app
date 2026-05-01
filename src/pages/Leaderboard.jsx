@@ -59,8 +59,15 @@ export default function Leaderboard() {
           if (!isMounted) return;
 
           setAvailableTests(tests);
-          setSelectedTest(tests[0]?.value || '');
-          setSubmissions(results);
+          const firstTest = tests[0] || null;
+          setSelectedTest(firstTest?.value || '');
+
+          if (firstTest) {
+            const allResults = await apiRequest(`/tests/${firstTest.value}/results`);
+            if (isMounted) setSubmissions(allResults);
+          } else {
+            if (isMounted) setSubmissions([]);
+          }
         }
       } catch (error) {
         if (isMounted) {
@@ -86,21 +93,18 @@ export default function Leaderboard() {
   useEffect(() => {
     if (!selectedTest) return;
 
-    if (userRole === 'teacher') {
-      apiRequest(`/tests/${selectedTest}/results`)
-        .then((results) => setSubmissions(results))
-        .catch((error) => setLoadError(error.message || 'Unable to load results.'));
-    }
-  }, [selectedTest, userRole]);
+    apiRequest(`/tests/${selectedTest}/results`)
+      .then((results) => setSubmissions(results))
+      .catch((error) => setLoadError(error.message || 'Unable to load results.'));
+  }, [selectedTest]);
 
   const visibleSubmissions = submissions
     .filter((submission) => !selectedTest || String(submission.testId) === String(selectedTest))
-    .filter((submission) => userRole === 'teacher' || submission.username === currentUserIdentifier)
     .sort((left, right) => right.score - left.score || new Date(left.submittedAt) - new Date(right.submittedAt));
 
   const leaderboardRows = visibleSubmissions.map((submission, index) => ({
     ...submission,
-    studentName: submission.username,
+    studentName: submission.studentName || submission.username,
     rank: index + 1,
     scoreText: `${submission.score}/${submission.total}`,
     percentText: `${submission.total > 0 ? Math.round((submission.score / submission.total) * 100) : 0}%`,
@@ -253,12 +257,14 @@ export default function Leaderboard() {
                       </td>
                       <td className="px-6 py-4 text-[#464553] text-xs">{submission.submittedText}</td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          className="text-indigo-600 hover:underline text-sm font-semibold"
-                          onClick={() => navigate('/results', { state: { submission } })}
-                        >
-                          View Details
-                        </button>
+                        {(userRole === 'teacher' || submission.username === currentUserIdentifier) && (
+                          <button
+                            className="text-indigo-600 hover:underline text-sm font-semibold"
+                            onClick={() => navigate('/results', { state: { submission } })}
+                          >
+                            View Details
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))
