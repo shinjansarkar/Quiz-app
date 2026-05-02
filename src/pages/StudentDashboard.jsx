@@ -25,7 +25,7 @@ export default function StudentDashboard() {
     categoryClassName: test.published === 'yes' ? 'bg-[#86f2e4] text-[#006f66]' : 'bg-[#d3e4fe] text-[#464553]',
     duration: `${test.duration} min`,
     title: test.testName,
-    teacher: test.teacherUsername || 'Instructor',
+    teacher: test.teacherName || test.teacherUsername || 'Instructor',
     testName: test.testName,
     featured: test.published === 'yes',
     titleClassName: test.published === 'yes' ? 'text-white' : 'text-[#0b1c30]',
@@ -361,7 +361,7 @@ export default function StudentDashboard() {
             {loadingTests ? (
               <div className="md:col-span-2 lg:col-span-3 bg-white border border-slate-200 rounded-xl p-8 text-center shadow-sm">
                 <h3 className="text-lg font-bold text-[#0b1c30] mb-2">Loading published tests...</h3>
-                <p className="text-sm text-[#464553]">Fetching tests from Supabase.</p>
+                <p className="text-sm text-[#464553]">Fetching tests from Quizflow.</p>
               </div>
             ) : loadError ? (
               <div className="md:col-span-2 lg:col-span-3 bg-white border border-slate-200 rounded-xl p-8 text-center shadow-sm">
@@ -420,14 +420,11 @@ export default function StudentDashboard() {
                   <span className="material-symbols-outlined">stars</span>
                   <span className="text-sm font-semibold">Recent Performance</span>
                 </div>
-                <h3 className="text-2xl font-bold text-[#0b1c30] mb-2">Latest submission from Supabase</h3>
-                <p className="text-base text-[#464553]">Complete a test to see your result here and on the leaderboard.</p>
+                <h3 className="text-2xl font-bold text-[#0b1c30] mb-2">Latest submission from Quizflow</h3>
+                <p className="text-base text-[#464553]">Check all your results on the leaderboard.</p>
               </div>
               <div className="flex items-center gap-4">
-                <div className="text-center px-8 py-6 bg-white rounded-2xl shadow-sm border border-indigo-100">
-                  <div className="text-4xl font-bold text-indigo-700">DB</div>
-                  <div className="text-xs font-semibold text-slate-500">SYNCED</div>
-                </div>
+
                 <button className="h-12 w-12 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg hover:bg-indigo-700 transition-colors active:scale-95" onClick={() => navigate('/results')}>
                   <span className="material-symbols-outlined">chevron_right</span>
                 </button>

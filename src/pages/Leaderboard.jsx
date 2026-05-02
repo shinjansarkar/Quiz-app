@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest, getStoredUser } from '../config/api';
 
@@ -12,6 +12,82 @@ export default function Leaderboard() {
   const [selectedTest, setSelectedTest] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  const fetchLeaderboardData = useCallback(async () => {
+    const user = getStoredUser();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    setLoading(true);
+    setLoadError('');
+
+    try {
+      if (user.role === 'teacher') {
+        const teacherTests = await apiRequest('/tests/my-tests');
+        const tests = teacherTests.map((test) => ({
+          value: String(test.id),
+          label: test.testName,
+        }));
+
+        if (!isMounted.current) return;
+        setAvailableTests(tests);
+        
+        const currentSelected = selectedTest;
+        const exists = tests.some(t => t.value === currentSelected);
+        const testToLoad = exists ? currentSelected : (tests[0]?.value || '');
+        
+        if (!exists) setSelectedTest(testToLoad);
+
+        if (testToLoad) {
+          const results = await apiRequest(`/tests/${testToLoad}/results`);
+          if (!isMounted.current) return;
+          setSubmissions(results);
+        } else {
+          setSubmissions([]);
+        }
+      } else {
+        const results = await apiRequest('/tests/results/my-results');
+        const tests = Array.from(
+          new Map(results.map((result) => [String(result.testId), result.testName || `Test ${result.testId}`])).entries()
+        ).map(([value, label]) => ({ value, label }));
+
+        if (!isMounted.current) return;
+        setAvailableTests(tests);
+        
+        const currentSelected = selectedTest;
+        const exists = tests.some(t => t.value === currentSelected);
+        const testToLoad = exists ? currentSelected : (tests[0]?.value || '');
+        
+        if (!exists) setSelectedTest(testToLoad);
+
+        if (testToLoad) {
+          const allResults = await apiRequest(`/tests/${testToLoad}/results`);
+          if (!isMounted.current) return;
+          setSubmissions(allResults);
+        } else {
+          setSubmissions([]);
+        }
+      }
+    } catch (error) {
+      if (!isMounted.current) return;
+      setLoadError(error.message || 'Unable to load leaderboard.');
+      setSubmissions([]);
+      setAvailableTests([]);
+      setSelectedTest('');
+    } finally {
+      if (isMounted.current) setLoading(false);
+    }
+  }, [navigate, selectedTest]);
 
   useEffect(() => {
     const user = getStoredUser();
@@ -24,71 +100,8 @@ export default function Leaderboard() {
     setCurrentUserName(user.name || user.identifier || 'User');
     setCurrentUserIdentifier(user.identifier || '');
 
-    let isMounted = true;
-
-    const loadLeaderboard = async () => {
-      setLoading(true);
-      setLoadError('');
-
-      try {
-        if (user.role === 'teacher') {
-          const teacherTests = await apiRequest('/tests/my-tests');
-          const tests = teacherTests.map((test) => ({
-            value: String(test.id),
-            label: test.testName,
-          }));
-
-          if (!isMounted) return;
-
-          setAvailableTests(tests);
-          const firstTest = tests[0] || null;
-          setSelectedTest(firstTest?.value || '');
-
-          if (firstTest) {
-            const results = await apiRequest(`/tests/${firstTest.value}/results`);
-            if (isMounted) setSubmissions(results);
-          } else {
-            if (isMounted) setSubmissions([]);
-          }
-        } else {
-          const results = await apiRequest('/tests/results/my-results');
-          const tests = Array.from(
-            new Map(results.map((result) => [String(result.testId), result.testName || `Test ${result.testId}`])).entries()
-          ).map(([value, label]) => ({ value, label }));
-
-          if (!isMounted) return;
-
-          setAvailableTests(tests);
-          const firstTest = tests[0] || null;
-          setSelectedTest(firstTest?.value || '');
-
-          if (firstTest) {
-            const allResults = await apiRequest(`/tests/${firstTest.value}/results`);
-            if (isMounted) setSubmissions(allResults);
-          } else {
-            if (isMounted) setSubmissions([]);
-          }
-        }
-      } catch (error) {
-        if (isMounted) {
-          setLoadError(error.message || 'Unable to load leaderboard.');
-          setSubmissions([]);
-          setAvailableTests([]);
-          setSelectedTest('');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadLeaderboard();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [navigate]);
+    fetchLeaderboardData();
+  }, [navigate, fetchLeaderboardData]);
 
   useEffect(() => {
     if (!selectedTest) return;
@@ -235,7 +248,7 @@ export default function Leaderboard() {
                 <span className="material-symbols-outlined text-base">download</span>
                 Export
               </button>
-              <button className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-indigo-600 transition-all" onClick={() => window.location.reload()}>
+              <button className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-indigo-600 transition-all" onClick={fetchLeaderboardData}>
                 <span className="material-symbols-outlined text-base">refresh</span>
               </button>
             </div>

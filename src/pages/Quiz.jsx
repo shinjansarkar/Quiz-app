@@ -171,7 +171,7 @@ export default function Quiz() {
           <div className="bg-white p-6 sm:p-8 rounded-xl border border-slate-200 shadow-sm">
             <div className="flex justify-between items-start mb-4">
               <span className="text-[#1f108e] text-sm font-semibold bg-[#e2dfff] px-3 py-1 rounded-full">
-                Question {String(q.id).padStart(2, '0')} of {questions.length}
+                Question {String(currentIdx + 1).padStart(2, '0')} of {questions.length}
               </span>
               <span className="text-[#777584] text-xs">4 Points</span>
             </div>
@@ -220,7 +220,7 @@ export default function Quiz() {
                     onClick={() => setCurrentIdx(i)} 
                     className={`w-full aspect-square flex items-center justify-center rounded-lg ${bgClass} text-sm font-semibold transition-transform hover:scale-105 active:scale-95`}
                   >
-                    {String(question.id).padStart(2, '0')}
+                    {String(i + 1).padStart(2, '0')}
                   </button>
                 );
               })}
